@@ -63,10 +63,11 @@ yarn-error.log
 /dist-ssr/
 *.local
 
-# Environment variables
+# Environment variables and config files
 .env
 .env.local
 .env.*.local
+backend/src/main/resources/application-dev.yml
 
 # Database files
 *.db
