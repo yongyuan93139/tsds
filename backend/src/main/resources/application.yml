@@ -1,0 +1,37 @@
+spring:
+  profiles:
+    active: dev
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+swagger:
+  enable: true
+  title: 探伤车配件管理系统API文档
+  description: 探伤车配件管理系统接口文档
+  version: 1.0.0
+  base-package: com.example.inspectioncarparts.controller
+
+jwt:
+  secret: inspectioncarpartssecretkey
+  expiration: 86400 # 24小时
+
+app:
+  security:
+    requireLogin: 0 # 1: 需要登录验证, 0: 不需要登录验证
+
+mybatis-plus:
+  configuration:
+    # 启用自动枚举映射
+    default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
+  global-config:
+    db-config:
+      # 枚举类所在包
+      enum-package: com.example.inspectioncarparts.domain.enums
+      # 更新策略：更新时包含null值字段
+      field-strategy: not_empty
