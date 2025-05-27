@@ -23,14 +23,14 @@ public interface PartService {
      * 删除配件信息
      * @param id 配件ID
      */
-    void deletePart(Long id);
+    void deletePart(Integer id);
 
     /**
      * 获取配件详情
      * @param id 配件ID
      * @return 配件信息
      */
-    Part getPartById(Long id);
+    Part getPartById(Integer id);
 
     /**
      * 分页查询配件信息
@@ -45,7 +45,7 @@ public interface PartService {
      * @param rootId 根节点ID
      * @return 配件树
      */
-    List<Part> getPartTree(Long rootId);
+    List<Part> getPartTree(Integer rootId);
 
     /**
      * 关联配件到车辆
@@ -53,21 +53,21 @@ public interface PartService {
      * @param vehicleId 车辆ID
      * @return 更新后的配件信息
      */
-    Part associateWithVehicle(Long partId, Long vehicleId);
+    Part associateWithVehicle(Integer partId, Integer vehicleId);
 
     /**
      * 解除配件与车辆的关联
      * @param partId 配件ID
      * @return 更新后的配件信息
      */
-    Part disassociateFromVehicle(Long partId);
+    Part disassociateFromVehicle(Integer partId);
 
     /**
      * 生成配件二维码
      * @param partId 配件ID
      * @return 二维码内容
      */
-    String generateQrCode(Long partId);
+    String generateQrCode(Integer partId);
 
     /**
      * 解析二维码获取配件信息
@@ -82,7 +82,7 @@ public interface PartService {
      * @param partTypeId 配件类型ID
      * @return 配件列表
      */
-    List<Part> listByVehicleAndType(Long vehicleId, Long partTypeId);
+    List<Part> listByVehicleAndType(Integer vehicleId, Integer partTypeId);
 
     /**
      * 批量关联配件到车辆
@@ -90,13 +90,13 @@ public interface PartService {
      * @param partIds 配件ID列表
      * @return 更新后的配件列表
      */
-    List<Part> batchAssociateWithVehicle(Long vehicleId, List<Long> partIds);
+    List<Part> batchAssociateWithVehicle(Integer vehicleId, List<Integer> partIds);
 
     /**
      * 根据车辆ID解除所有配件关联
      * @param vehicleId 车辆ID
      */
-    void disassociateAllFromVehicle(Long vehicleId);
+    void disassociateAllFromVehicle(Integer vehicleId);
 
     Part getPartByCode(String partCode);
 }

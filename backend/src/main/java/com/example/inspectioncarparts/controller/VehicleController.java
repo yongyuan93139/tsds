@@ -3,8 +3,7 @@ package com.example.inspectioncarparts.controller;
 import com.example.inspectioncarparts.common.Result;
 import com.example.inspectioncarparts.domain.entity.Vehicle;
 import com.example.inspectioncarparts.service.VehicleService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,7 +31,7 @@ public class VehicleController {
 
     @PutMapping("/{id}")
     @ApiOperation("更新车辆信息")
-    public Result<Vehicle> update(@PathVariable Long id, @RequestBody Vehicle vehicle) {
+    public Result<Vehicle> update(@PathVariable Integer id, @RequestBody Vehicle vehicle) {
         vehicle.setId(id);
         try {
             Vehicle updated = vehicleService.updateVehicle(vehicle);
@@ -44,7 +43,7 @@ public class VehicleController {
 
     @DeleteMapping("/{id}")
     @ApiOperation("删除车辆信息")
-    public Result<Void> delete(@PathVariable Long id) {
+    public Result<Void> delete(@PathVariable Integer id) {
         try {
             vehicleService.deleteVehicle(id);
             return Result.success();
@@ -55,7 +54,7 @@ public class VehicleController {
 
     @GetMapping("/{id}")
     @ApiOperation("获取车辆详情")
-    public Result<Vehicle> getById(@PathVariable Long id) {
+    public Result<Vehicle> getById(@PathVariable Integer id) {
         Vehicle vehicle = vehicleService.getVehicleById(id);
         if (vehicle == null) {
             return Result.fail("车辆不存在");
@@ -73,8 +72,17 @@ public class VehicleController {
     }
 
     @PutMapping("/{id}/gps")
-    @ApiOperation("更新GPS位置")
-    public Result<Vehicle> updateGps(@PathVariable Long id, @RequestParam String gpsInfo) {
+    @ApiOperation(value = "更新GPS位置", notes = "根据车辆ID更新其GPS位置信息，格式为经纬度坐标，如'39.9042,116.4074'")
+    @ApiImplicitParams({
+        @ApiImplicitParam(name = "id", value = "车辆ID", required = true, dataType = "Integer", paramType = "path"),
+        @ApiImplicitParam(name = "gpsInfo", value = "GPS位置信息，格式为'纬度,经度'", required = true, dataType = "String", paramType = "query", example = "39.9042,116.4074")
+    })
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "GPS位置更新成功"),
+        @ApiResponse(code = 400, message = "GPS格式错误"),
+        @ApiResponse(code = 404, message = "车辆不存在")
+    })
+    public Result<Vehicle> updateGps(@PathVariable Integer id, @RequestParam String gpsInfo) {
         try {
             Vehicle updated = vehicleService.updateGpsInfo(id, gpsInfo);
             return Result.success(updated);
@@ -85,7 +93,7 @@ public class VehicleController {
 
     @PutMapping("/{id}/outbound-time")
     @ApiOperation("更新出库时间")
-    public Result<Vehicle> updateOutboundTime(@PathVariable Long id, @RequestParam Date outboundTime) {
+    public Result<Vehicle> updateOutboundTime(@PathVariable Integer id, @RequestParam Date outboundTime) {
         try {
             Vehicle updated = vehicleService.updateOutboundTime(id, outboundTime);
             return Result.success(updated);

@@ -90,26 +90,48 @@ const handleLogin = async () => {
     await loginFormRef.value.validate()
     loading.value = true
     
-    // 获取完整响应
+    // 调用登录接口
     const response = await login({
       username: loginForm.value.username,
       password: loginForm.value.password
     })
     
-    console.log('完整响应:', response)
-
-    // 根据实际响应结构调整
-    if (response) {
-      const { token, user } = response
-      if (!token) throw new Error('未获取到token')
-      
-      userStore.setToken(token)
-      userStore.setUserInfo(user)
-      ElMessage.success('登录成功')
-      router.push('/')
-    } else {
-      throw new Error('无效的响应数据')
+    console.log('完整登录响应:', response)
+    
+    // 检查响应结构
+    if (!response) {
+      throw new Error('无效的响应格式')
     }
+    
+    // const responseData = response.data.data // 实际数据在data.data中
+    // console.log('登录数据:', responseData)
+
+    // 设置token
+    userStore.setToken(response.token)
+    
+    // 处理权限数据
+    if (debugMode.value) {
+      console.log('调试模式: 模拟权限数据')
+      userStore.extractPermissionsFromLoginResponse({
+        user: {
+          username: 'admin',
+          roles: [{
+            name: 'admin',
+            permissions: [
+              { code: 'system', name: '系统管理' },
+              { code: 'user', name: '用户管理' },
+              { code: 'role', name: '角色管理' }
+            ]
+          }]
+        }
+      })
+    } else {
+      // 从实际响应中提取权限
+      userStore.extractPermissionsFromLoginResponse(response)
+    }
+    
+    ElMessage.success('登录成功')
+    router.push('/')
   } catch (error) {
     console.error('登录错误:', error)
     ElMessage.error(error.message || '登录失败')

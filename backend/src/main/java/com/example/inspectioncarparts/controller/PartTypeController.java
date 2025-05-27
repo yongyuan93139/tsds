@@ -32,7 +32,7 @@ public class PartTypeController {
 
     @PutMapping("/{id}")
     @ApiOperation("更新配件类型")
-    public Result<PartType> update(@PathVariable Long id, @RequestBody PartType partType) {
+    public Result<PartType> update(@PathVariable Integer id, @RequestBody PartType partType) {
         partType.setId(id);
         try {
             PartType updated = partTypeService.updatePartType(partType);
@@ -44,7 +44,7 @@ public class PartTypeController {
 
     @DeleteMapping("/{id}")
     @ApiOperation("删除配件类型")
-    public Result<Void> delete(@PathVariable Long id) {
+    public Result<Void> delete(@PathVariable Integer id) {
         try {
             partTypeService.deletePartType(id);
             return Result.success();
@@ -55,7 +55,7 @@ public class PartTypeController {
 
     @GetMapping("/{id}")
     @ApiOperation("获取配件类型详情")
-    public Result<PartType> getById(@PathVariable Long id) {
+    public Result<PartType> getById(@PathVariable Integer id) {
         PartType partType = partTypeService.getPartTypeById(id);
         if (partType == null) {
             return Result.fail("配件类型不存在");

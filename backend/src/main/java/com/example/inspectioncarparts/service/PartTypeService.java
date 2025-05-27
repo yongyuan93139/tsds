@@ -25,14 +25,14 @@ public interface PartTypeService {
      * 删除配件类型
      * @param id 配件类型ID
      */
-    void deletePartType(Long id);
+    void deletePartType(Integer id);
 
     /**
      * 获取配件类型详情
      * @param id 配件类型ID
      * @return 配件类型信息
      */
-    PartType getPartTypeById(Long id);
+    PartType getPartTypeById(Integer id);
 
     /**
      * 分页查询配件类型

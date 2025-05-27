@@ -38,7 +38,7 @@ public class PartController {
 
     @PutMapping("/{id}")
     @ApiOperation("更新配件信息")
-    public Result<Part> update(@PathVariable Long id, @RequestBody Part part) {
+    public Result<Part> update(@PathVariable Integer id, @RequestBody Part part) {
         part.setId(id);
         try {
             Part updated = partService.updatePart(part);
@@ -50,7 +50,7 @@ public class PartController {
 
     @DeleteMapping("/{id}")
     @ApiOperation("删除配件信息")
-    public Result<Void> delete(@PathVariable Long id) {
+    public Result<Void> delete(@PathVariable Integer id) {
         try {
             partService.deletePart(id);
             return Result.success();
@@ -61,7 +61,7 @@ public class PartController {
 
     @GetMapping("/{id}")
     @ApiOperation("获取配件详情")
-    public Result<Part> getById(@PathVariable Long id) {
+    public Result<Part> getById(@PathVariable Integer id) {
         Part part = partService.getPartById(id);
         if (part == null) {
             return Result.fail("配件不存在");
@@ -80,14 +80,14 @@ public class PartController {
 
     @GetMapping("/tree")
     @ApiOperation("获取配件树形结构")
-    public Result<List<Part>> getTree(@RequestParam(required = false) Long rootId) {
+    public Result<List<Part>> getTree(@RequestParam(required = false) Integer rootId) {
         List<Part> tree = partService.getPartTree(rootId);
         return Result.success(tree);
     }
 
     @PutMapping("/{id}/associate-vehicle")
     @ApiOperation("关联配件到车辆")
-    public Result<Part> associateVehicle(@PathVariable Long id, @RequestParam Long vehicleId) {
+    public Result<Part> associateVehicle(@PathVariable Integer id, @RequestParam Integer vehicleId) {
         try {
             Part updated = partService.associateWithVehicle(id, vehicleId);
             return Result.success(updated);
@@ -98,7 +98,7 @@ public class PartController {
 
     @PutMapping("/{id}/disassociate-vehicle")
     @ApiOperation("解除配件与车辆的关联")
-    public Result<Part> disassociateVehicle(@PathVariable Long id) {
+    public Result<Part> disassociateVehicle(@PathVariable Integer id) {
         try {
             Part updated = partService.disassociateFromVehicle(id);
             return Result.success(updated);
@@ -120,7 +120,7 @@ public class PartController {
 
     @PutMapping("/disassociate-by-vehicle/{vehicleId}")
     @ApiOperation("根据车辆ID解除所有配件关联")
-    public Result<Void> disassociateByVehicle(@PathVariable Long vehicleId) {
+    public Result<Void> disassociateByVehicle(@PathVariable Integer vehicleId) {
         try {
             partService.disassociateAllFromVehicle(vehicleId);
             return Result.success();
@@ -131,7 +131,7 @@ public class PartController {
 
     @GetMapping("/{id}/qrcode")
     @ApiOperation("生成配件二维码")
-    public Result<String> generateQrCode(@PathVariable Long id) {
+    public Result<String> generateQrCode(@PathVariable Integer id) {
         try {
             String qrCode = partService.generateQrCode(id);
             return Result.success(qrCode);
@@ -154,8 +154,8 @@ public class PartController {
     @GetMapping("/by-vehicle-and-type")
     @ApiOperation("根据车辆ID和配件类型查询配件列表(参数可选)")
     public Result<List<Part>> listByVehicleAndType(
-            @RequestParam(required = false) Long vehicleId,
-            @RequestParam(required = false) Long typeId) {
+            @RequestParam(required = false) Integer vehicleId,
+            @RequestParam(required = false) Integer typeId) {
         List<Part> parts = partService.listByVehicleAndType(vehicleId, typeId);
         return Result.success(parts);
     }

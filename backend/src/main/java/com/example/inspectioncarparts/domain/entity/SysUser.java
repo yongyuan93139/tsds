@@ -3,17 +3,20 @@ package com.example.inspectioncarparts.domain.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 @TableName("sys_user")
 public class SysUser implements UserDetails {
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Integer id;
     
     private String username;
     
@@ -26,10 +29,22 @@ public class SysUser implements UserDetails {
     
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private Date updateTime;
+    
+    private String realName;
+    
+    // 非数据库字段
+    @TableField(exist = false)
+    private List<Role> roles;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList();
+        if (roles == null) {
+            return Collections.emptyList();
+        }
+        return roles.stream()
+            .flatMap(role -> role.getPermissions().stream())
+            .map(permission -> new SimpleGrantedAuthority(permission.getCode()))
+            .collect(Collectors.toList());
     }
 
     @Override

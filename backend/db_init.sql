@@ -63,16 +63,6 @@ CREATE TABLE IF NOT EXISTS `part` (
   CONSTRAINT `fk_part_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicle` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='配件表';
 
--- 初始化管理员账号
--- 管理员用户初始化SQL
-INSERT INTO `sys_user` (`username`, `password`, `status`, `create_time`, `update_time`) 
-VALUES (
-    'admin', 
-    '$2a$10$N9qo8uLOickgx2ZMRZoMy.MYm6gG7L3HvC3xPBV2QK6bJfP6Y.3zK', 
-    1, 
-    NOW(), 
-    NOW()
-);
 
 -- 密码说明：
 -- 用户名: admin

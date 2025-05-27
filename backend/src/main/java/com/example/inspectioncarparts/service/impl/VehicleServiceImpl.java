@@ -51,7 +51,7 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     @Transactional
-    public void deleteVehicle(Long id) {
+    public void deleteVehicle(Integer id) {
         // 检查是否有配件关联该车辆
         // TODO: 需要注入PartMapper检查关联配件
         
@@ -60,7 +60,7 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     @Transactional(readOnly = true)
-    public Vehicle getVehicleById(Long id) {
+    public Vehicle getVehicleById(Integer id) {
         return vehicleMapper.selectById(id);
     }
 
@@ -78,7 +78,7 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Transactional
-    public Vehicle updateGpsInfo(Long id, String gpsInfo) {
+    public Vehicle updateGpsInfo(Integer id, String gpsInfo) {
         Vehicle vehicle = vehicleMapper.selectById(id);
         if (vehicle == null) {
             throw new RuntimeException("车辆不存在");
@@ -90,7 +90,7 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     @Transactional
-    public Vehicle updateOutboundTime(Long id, Date outboundTime) {
+    public Vehicle updateOutboundTime(Integer id, Date outboundTime) {
         Vehicle vehicle = vehicleMapper.selectById(id);
         if (vehicle == null) {
             throw new RuntimeException("车辆不存在");

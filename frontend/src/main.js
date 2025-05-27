@@ -4,23 +4,26 @@ import router from './router'
 import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+import permission from '@/directives/permission'
 
 const app = createApp(App)
 
-// 打印路由配置验证
-console.log('路由实例:', router)
+// 开发环境下将路由实例挂载到全局
+if (import.meta.env.DEV) {
+  window.router = router
+}
 
 app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)
 
-// 明确挂载并验证
-const root = document.getElementById('app')
-if (root) {
-  app.mount(root)
-  console.log('应用已挂载')
-} else {
-  console.error('挂载失败: #app元素不存在')
-  document.body.innerHTML = '<div id="app"></div>'
-  app.mount('#app')
+// 注册权限指令
+app.directive('permission', permission)
+
+// 注册所有Element Plus图标
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(key, component)
 }
+
+app.mount('#app')

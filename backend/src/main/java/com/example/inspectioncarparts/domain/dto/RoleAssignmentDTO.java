@@ -1,3 +1,7 @@
+package com.example.inspectioncarparts.domain.dto;
+
+import java.util.List;
+
 public class RoleAssignmentDTO {
     private List<Integer> roleIds;
     

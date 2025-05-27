@@ -11,8 +11,8 @@ import java.util.List;
 public class BatchAssociatePartsRequest {
 
     @ApiModelProperty("车辆ID")
-    private Long vehicleId;
+    private Integer vehicleId;
 
     @ApiModelProperty("配件ID列表")
-    private List<Long> partIds;
+    private List<Integer> partIds;
 }

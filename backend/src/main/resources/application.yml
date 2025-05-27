@@ -23,12 +23,13 @@ jwt:
 
 app:
   security:
-    requireLogin: 0 # 1: 需要登录验证, 0: 不需要登录验证
+    requireLogin: 1 # 1: 需要登录验证, 0: 不需要登录验证
 
 mybatis-plus:
   configuration:
     # 启用自动枚举映射
     default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
+    map-underscore-to-camel-case: true # 开启驼峰映射
   global-config:
     db-config:
       # 枚举类所在包

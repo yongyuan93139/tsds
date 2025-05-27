@@ -23,14 +23,14 @@ public interface VehicleService {
      * 删除车辆信息
      * @param id 车辆ID
      */
-    void deleteVehicle(Long id);
+    void deleteVehicle(Integer id);
 
     /**
      * 获取车辆详情
      * @param id 车辆ID
      * @return 车辆信息
      */
-    Vehicle getVehicleById(Long id);
+    Vehicle getVehicleById(Integer id);
 
     /**
      * 分页查询车辆信息
@@ -46,7 +46,7 @@ public interface VehicleService {
      * @param gpsInfo GPS位置信息
      * @return 更新后的车辆信息
      */
-    Vehicle updateGpsInfo(Long id, String gpsInfo);
+    Vehicle updateGpsInfo(Integer id, String gpsInfo);
 
     /**
      * 更新出库时间
@@ -54,5 +54,5 @@ public interface VehicleService {
      * @param outboundTime 出库时间
      * @return 更新后的车辆信息
      */
-    Vehicle updateOutboundTime(Long id, java.util.Date outboundTime);
+    Vehicle updateOutboundTime(Integer id, java.util.Date outboundTime);
 }

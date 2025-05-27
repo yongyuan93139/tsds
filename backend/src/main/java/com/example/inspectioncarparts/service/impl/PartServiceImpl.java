@@ -91,7 +91,7 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional
-    public void deletePart(Long id) {
+    public void deletePart(Integer id) {
         // 检查是否有子配件
         if (partMapper.selectCount(new QueryWrapper<Part>().eq("parent_id", id)) > 0) {
             throw new RuntimeException("存在子配件，无法删除");
@@ -102,7 +102,7 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional(readOnly = true)
-    public Part getPartById(Long id) {
+    public Part getPartById(Integer id) {
         return partMapper.selectById(id);
     }
 
@@ -121,7 +121,7 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Part> getPartTree(Long rootId) {
+    public List<Part> getPartTree(Integer rootId) {
         List<Part> result = new ArrayList<>();
         if (rootId == null) {
             // 查询所有根节点
@@ -149,7 +149,7 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional
-    public Part associateWithVehicle(Long partId, Long vehicleId) {
+    public Part associateWithVehicle(Integer partId, Integer vehicleId) {
         Part part = partMapper.selectById(partId);
         if (part == null) {
             throw new RuntimeException("配件不存在");
@@ -166,13 +166,13 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional
-    public Part disassociateFromVehicle(Long partId) {
+    public Part disassociateFromVehicle(Integer partId) {
         return associateWithVehicle(partId, null);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public String generateQrCode(Long partId) {
+    public String generateQrCode(Integer partId) {
         Part part = partMapper.selectById(partId);
         if (part == null) {
             throw new RuntimeException("配件不存在");
@@ -193,7 +193,7 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional
-    public List<Part> batchAssociateWithVehicle(Long vehicleId, List<Long> partIds) {
+    public List<Part> batchAssociateWithVehicle(Integer vehicleId, List<Integer> partIds) {
         // 检查车辆是否存在
         if (vehicleId != null && vehicleMapper.selectById(vehicleId) == null) {
             throw new RuntimeException("车辆不存在");
@@ -217,7 +217,7 @@ public class PartServiceImpl implements PartService {
         }
 
         // 批量关联
-        for (Long partId : partIds) {
+        for (Integer partId : partIds) {
             associateWithVehicle(partId, vehicleId);
         }
 //        // 批量更新配件的vehicleId
@@ -233,7 +233,7 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional
-    public void disassociateAllFromVehicle(Long vehicleId) {
+    public void disassociateAllFromVehicle(Integer vehicleId) {
         // 检查车辆是否存在
         if (vehicleMapper.selectById(vehicleId) == null) {
             throw new RuntimeException("车辆不存在");
@@ -254,7 +254,7 @@ public class PartServiceImpl implements PartService {
     }
 
     @Override
-    public List<Part> listByVehicleAndType(Long vehicleId, Long partTypeId) {
+    public List<Part> listByVehicleAndType(Integer vehicleId, Integer partTypeId) {
         QueryWrapper<Part> queryWrapper = new QueryWrapper<>();
         
         if (vehicleId != null) {

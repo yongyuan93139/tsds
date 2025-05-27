@@ -10,7 +10,7 @@ import java.util.Date;
 @TableName("vehicle")
 public class Vehicle {
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Integer id;
     
     @TableField("vehicle_code")
     private String vehicleCode;

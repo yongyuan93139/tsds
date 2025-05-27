@@ -9,7 +9,7 @@ import java.util.Date;
 @TableName("part_type")
 public class PartType {
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Integer id;
     
     @TableField("type_code")
     private String typeCode;

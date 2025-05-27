@@ -56,7 +56,7 @@ public class PartTypeServiceImpl implements PartTypeService {
 
     @Override
     @Transactional
-    public void deletePartType(Long id) {
+    public void deletePartType(Integer id) {
         if (partMapper.selectCount(new QueryWrapper<Part>().eq("type_id", id)) > 0) {
             throw new RuntimeException("存在关联配件，无法删除");
         }
@@ -64,7 +64,7 @@ public class PartTypeServiceImpl implements PartTypeService {
     }
 
     @Override
-    public PartType getPartTypeById(Long id) {
+    public PartType getPartTypeById(Integer id) {
         return partTypeMapper.selectById(id);
     }
 

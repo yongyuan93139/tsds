@@ -15,19 +15,19 @@ import java.util.Date;
 @TableName("part")
 public class Part {
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Integer id;
     
     @TableField("part_code")
     private String partCode;
     
     @TableField("parent_id")
-    private Long parentId;
+    private Integer parentId;
     
     @TableField("type_id")
-    private Long typeId;
+    private Integer typeId;
     
     @TableField("vehicle_id")
-    private Long vehicleId;
+    private Integer vehicleId;
     
     @TableField("production_date")
     private Date productionDate;
