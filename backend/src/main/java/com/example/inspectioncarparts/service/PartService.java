@@ -1,5 +1,6 @@
 package com.example.inspectioncarparts.service;
 
+import com.example.inspectioncarparts.domain.dto.ReplacePartRequest;
 import com.example.inspectioncarparts.domain.entity.Part;
 import com.example.inspectioncarparts.common.Page;
 import java.util.List;
@@ -99,4 +100,13 @@ public interface PartService {
     void disassociateAllFromVehicle(Integer vehicleId);
 
     Part getPartByCode(String partCode);
+
+    /**
+     * 更换配件
+     * @param oldPartId 原配件ID
+     * @param newPart 新配件信息
+     * @return 新创建的配件
+     */
+    Part replacePart(Integer oldPartId, Part newPart);
+
 }

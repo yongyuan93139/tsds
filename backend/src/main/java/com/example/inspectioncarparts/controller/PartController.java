@@ -3,6 +3,7 @@ package com.example.inspectioncarparts.controller;
 import com.example.inspectioncarparts.common.Page;
 import com.example.inspectioncarparts.common.Result;
 import com.example.inspectioncarparts.domain.dto.BatchAssociatePartsRequest;
+import com.example.inspectioncarparts.domain.dto.ReplacePartRequest;
 import com.example.inspectioncarparts.domain.entity.Part;
 import com.example.inspectioncarparts.service.PartService;
 import com.google.zxing.BarcodeFormat;
@@ -191,5 +192,19 @@ public class PartController {
         return Result.success(part);
     }
 
-
+    @PostMapping("/replace")
+    @ApiOperation("更换配件")
+    public Result<Part> replacePart(@RequestBody ReplacePartRequest request) {
+        try {
+            // 1. 解绑原配件
+            partService.disassociateFromVehicle(request.getOldPartId());
+            
+            // 2. 保存新配件
+            Part created = partService.createPart(request.getNewPart());
+            
+            return Result.success(created);
+        } catch (RuntimeException e) {
+            return Result.fail(e.getMessage());
+        }
+    }
 }

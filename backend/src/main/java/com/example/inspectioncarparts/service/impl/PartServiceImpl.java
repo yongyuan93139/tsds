@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.inspectioncarparts.common.Page;
+import com.example.inspectioncarparts.domain.dto.ReplacePartRequest;
 import com.example.inspectioncarparts.domain.entity.Part;
 import com.example.inspectioncarparts.mapper.PartMapper;
 import com.example.inspectioncarparts.mapper.PartTypeMapper;
@@ -159,8 +160,13 @@ public class PartServiceImpl implements PartService {
             throw new RuntimeException("车辆不存在");
         }
         
-        part.setVehicleId(vehicleId);
-        partMapper.updateById(part);
+        partMapper.update(null, new UpdateWrapper<Part>()
+                .eq("id", partId)
+                .set("vehicle_id", null)
+                .set("activation_date", null)
+        )
+
+        ;
         return part;
     }
 
@@ -267,4 +273,29 @@ public class PartServiceImpl implements PartService {
         
         return partMapper.selectList(queryWrapper);
     }
+
+    @Override
+    @Transactional
+    public Part replacePart(Integer oldPartId, Part newPart) {
+        // 1. 检查原配件是否存在
+        Part oldPart = partMapper.selectById(oldPartId);
+        if (oldPart == null) {
+            throw new RuntimeException("原配件不存在");
+        }
+        
+        // 2. 解绑原配件与车辆的关联
+        disassociateFromVehicle(oldPartId);
+        
+        // 3. 保存新配件
+        // 如果新配件没有指定车辆ID，使用原配件的车辆ID
+        if (newPart.getVehicleId() == null && oldPart.getVehicleId() != null) {
+            newPart.setVehicleId(oldPart.getVehicleId());
+        }
+        
+        // 创建新配件
+        Part created = createPart(newPart);
+        
+        return created;
+    }
+
 }
