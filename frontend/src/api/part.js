@@ -38,3 +38,7 @@ export const deletePart = (id) => {
 export const batchAssociateVehicle = (data) => {
   return axios.post('/parts/batch-associate-vehicle', data)
 }
+
+export const replacePart = (data) => {
+  return axios.post('/parts/replace', data)
+}

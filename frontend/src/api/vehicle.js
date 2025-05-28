@@ -4,6 +4,10 @@ export const getVehicles = (params) => {
   return axios.get('/vehicles', { params })
 }
 
+export const getVehicleById = (id) => {
+  return axios.get(`/vehicles/${id}`)
+}
+
 export const createVehicle = (data) => {
   return axios.post('/vehicles', data)
 }

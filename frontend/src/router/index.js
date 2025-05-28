@@ -116,16 +116,15 @@ const routes = [
         alias: ['/parts/parts']
       },
       {
-        path: 'vehiclePart',
-        name: 'vehiclePart',
-        component: () => import('@/views/vehicle/VehiclePart.vue'),
+        path: 'parts-config',
+        name: 'vehiclePartsConfig',
+        component: () => import('@/views/vehicle/VehiclePartsConfig.vue'),
         meta: { 
-          title: '车辆配件设置',
-          permission: ['vehiclePart', 'vehicle'],
-          icon: 'vehiclePartSet'
+          title: '配件配置',
+          permission: ['vehiclePart','vehicle'],
+          icon: 'Setting'
         },
-        // 添加重定向处理错误路径
-        alias: ['/vehiclePart/vehiclePart']
+        alias: ['/parts-config/parts-config']
       }
     ]
   },
