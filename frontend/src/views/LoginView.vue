@@ -53,7 +53,7 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { login } from '@/api/auth'
 
-const debugMode = ref(true)
+const debugMode = ref(false)
 const router = useRouter()
 const userStore = useUserStore()
 
@@ -81,12 +81,7 @@ const toggleDebug = () => {
 
 const handleLogin = async () => {
   try {
-    if (debugMode.value) {
-      console.log('调试登录:', loginForm.value)
-      router.push('/')
-      return
-    }
-    
+        
     await loginFormRef.value.validate()
     loading.value = true
     
@@ -110,26 +105,8 @@ const handleLogin = async () => {
     userStore.setToken(response.token)
     
     // 处理权限数据
-    if (debugMode.value) {
-      console.log('调试模式: 模拟权限数据')
-      userStore.extractPermissionsFromLoginResponse({
-        user: {
-          username: 'admin',
-          roles: [{
-            name: 'admin',
-            permissions: [
-              { code: 'system', name: '系统管理' },
-              { code: 'user', name: '用户管理' },
-              { code: 'role', name: '角色管理' }
-            ]
-          }]
-        }
-      })
-    } else {
-      // 从实际响应中提取权限
-      userStore.extractPermissionsFromLoginResponse(response)
-    }
-    
+    // 从实际响应中提取权限
+    userStore.extractPermissionsFromLoginResponse(response)    
     ElMessage.success('登录成功')
     router.push('/')
   } catch (error) {

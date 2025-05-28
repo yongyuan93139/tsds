@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '@/views/LoginView.vue'
 import HomeView from '@/views/HomeView.vue'
-import PartTypeView from '@/views/PartTypeView.vue'
-import PartView from '@/views/PartView.vue'
-import VehicleView from '@/views/VehicleView.vue'
+import PartTypeView from '@/views/vehicle/PartTypeView.vue'
+import PartView from '@/views/vehicle/PartView.vue'
+import VehicleView from '@/views/vehicle/VehicleView.vue'
 import Layout from '@/layout/index.vue'
 import { useUserStore } from '@/stores/user'
 
@@ -70,16 +70,70 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/vehicles',
-    name: 'vehicles',
-    component: VehicleView,
-    meta: { requiresAuth: true }
+    path: '/',
+    component: () => import('@/layout/index.vue'),
+    meta: { 
+      title: '车辆配置', 
+      icon: 'Setting', 
+      requiresAuth: true,
+      permission: 'vehicle' 
+    },
+    children: [
+      {
+        path: 'vehicles',
+        name: 'vehicleMgr',
+        component: () => import('@/views/vehicle/VehicleView.vue'),
+        meta: { 
+          title: '车辆管理',
+          permission: ['vehicleMgr', 'vehicle'],
+          icon: 'Vehicle'
+        },
+        // 添加重定向处理错误路径
+        alias: ['/vehicles/vehicles']
+      },
+      {
+        path: 'partTypes',
+        name: 'partTypeMgr',
+        component: () => import('@/views/vehicle/PartTypeView.vue'),
+        meta: { 
+          title: '配件类型管理',
+          permission: ['partTypeMgr', 'vehicle'],
+          icon: 'partType'
+        },
+        // 添加重定向处理错误路径
+        alias: ['/partTypes/partTypes']
+      },
+      {
+        path: 'parts',
+        name: 'partMgr',
+        component: () => import('@/views/vehicle/PartView.vue'),
+        meta: { 
+          title: '配件管理',
+          permission: ['partMgr', 'vehicle'],
+          icon: 'partType'
+        },
+        // 添加重定向处理错误路径
+        alias: ['/parts/parts']
+      },
+      {
+        path: 'vehiclePart',
+        name: 'vehiclePart',
+        component: () => import('@/views/vehicle/VehiclePart.vue'),
+        meta: { 
+          title: '车辆配件设置',
+          permission: ['vehiclePart', 'vehicle'],
+          icon: 'vehiclePartSet'
+        },
+        // 添加重定向处理错误路径
+        alias: ['/vehiclePart/vehiclePart']
+      }
+    ]
   },
   // 添加配件详情路由
   {
     path: '/parts/detail/:partCode',
     name: 'partDetail',
-    component: () => import('@/views/PartDetailView.vue'),
+    component: () => import('@/views/vehicle/PartDetailView.vue'),
     meta: { requiresAuth: false }
   }
 ]

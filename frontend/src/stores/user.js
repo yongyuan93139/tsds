@@ -112,11 +112,35 @@ export const useUserStore = defineStore('user', () => {
       
       // 检查系统管理权限 (特殊处理)
       if (code === 'system') {
-        return permissions.value.some(p => 
-          p.code === 'system' || 
-          p.code.startsWith('user') || 
-          p.code.startsWith('role')
-        )
+        console.group('检查系统管理权限')
+        console.log('当前用户权限:', permissions.value)
+        
+        // 检查是否有system权限
+        const hasSystemPermission = permissions.value.some(p => p.code === 'system')
+        console.log('是否有system权限:', hasSystemPermission)
+        
+        // 检查子菜单权限
+        const systemRoute = window.router.options.routes.find(r => r.path === '/system')
+        console.log('系统管理路由:', systemRoute)
+        
+        if (systemRoute?.children) {
+          const hasChildPermission = systemRoute.children.some(child => {
+            const childPermissions = child.meta?.permission || [];
+            const childCodes = Array.isArray(childPermissions) ? childPermissions : [childPermissions];
+            console.log('检查子菜单权限:', child.path, childCodes)
+            return childCodes.some(childCode => {
+              const hasPermission = permissions.value.some(p => p.code === childCode)
+              console.log(`- 权限[${childCode}]检查结果:`, hasPermission)
+              return hasPermission
+            });
+          })
+          console.log('是否有子菜单权限:', hasChildPermission)
+          console.groupEnd()
+          return hasSystemPermission || hasChildPermission
+        }
+        
+        console.groupEnd()
+        return hasSystemPermission
       }
       
       return false

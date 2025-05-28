@@ -1,17 +1,4 @@
 <template>
-  <!-- 调试信息 -->
-  <div v-if="dialogVisible" style="
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background: blue;
-    color: white;
-    padding: 10px;
-    z-index: 9999;
-  ">
-    调试：权限对话框应该显示，当前dialogVisible={{dialogVisible}}
-  </div>
-
   <!-- 使用原生对话框替代Element Plus对话框 -->
   <div v-if="dialogVisible" class="native-dialog-wrapper" @click.self="handleClose">
     <div class="native-dialog">
@@ -24,10 +11,14 @@
           ref="tree"
           :data="permissionTree"
           show-checkbox
+          check-strictly
           node-key="id"
           :props="treeProps"
           :default-checked-keys="checkedKeys">
         </el-tree>
+        <div class="tree-tip">
+          提示：请选择需要分配的具体权限，父菜单会自动显示。
+        </div>
       </div>
       <div class="native-dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -113,16 +104,59 @@ const treeProps = reactive({
 
 const fetchData = async () => {
   try {
-    console.log('调用getPermissionTree，roleId:', props.role.id)
+    console.group('加载权限数据')
+    console.log('1. 开始加载权限数据, 角色ID:', props.role.id)
+    
     const [treeRes, rolePermissionsRes] = await Promise.all([
-      getPermissionTree(), 
+      getPermissionTree(props.role.id), // 传递roleId参数
       getRolePermissions(props.role.id)
     ])
-    permissionTree.value = treeRes
-    checkedKeys.value = rolePermissionsRes.map(p => p.id)
-    console.log('角色权限数据:', checkedKeys.value)
+    
+    console.log('2. 权限树数据:', treeRes)
+    console.log('3. 角色已有权限:', rolePermissionsRes)
+    
+    // 处理数据
+    const rawTree = treeRes.data || treeRes || []
+    const rawPermissions = rolePermissionsRes.data || rolePermissionsRes || []
+    
+    console.log('4. 原始权限树:', rawTree)
+    console.log('5. 原始权限列表:', rawPermissions)
+    
+    // 过滤权限树，只保留有权限的节点
+    const filterPermissionTree = (tree, permissions) => {
+      return tree.filter(node => {
+        // 如果是叶子节点，检查是否在权限列表中
+        if (!node.children || node.children.length === 0) {
+          return permissions.some(p => p.id === node.id)
+        }
+        
+        // 如果是父节点，递归处理子节点
+        const filteredChildren = filterPermissionTree(node.children, permissions)
+        node.children = filteredChildren
+        
+        // 只有当有子节点时才保留父节点
+        return filteredChildren.length > 0
+      })
+    }
+    
+    // 设置权限树和选中的keys
+    permissionTree.value = rawTree
+    checkedKeys.value = rawPermissions.map(p => p.id)
+    
+    console.log('6. 处理后的权限树:', permissionTree.value)
+    console.log('7. 选中的权限keys:', checkedKeys.value)
+    
+    // // 等待DOM更新后验证选中状态
+    // nextTick(() => {
+    //   if (tree.value) {
+    //     console.log('6. DOM更新后选中的节点:', tree.value.getCheckedKeys())
+    //   }
+    // })
   } catch (error) {
-    console.error(error)
+    console.error('加载权限数据失败:', error)
+    ElMessage.error('加载权限数据失败')
+  } finally {
+    console.groupEnd()
   }
 }
 
@@ -137,16 +171,16 @@ const handleSubmit = async () => {
     console.group('权限提交过程跟踪')
     console.log('1. tree引用:', tree.value)
     
-    // 获取选中和半选中的节点
+    // 只获取完全选中的节点，不包括半选中的节点
     const checkedKeys = tree.value ? tree.value.getCheckedKeys() : []
     const halfCheckedKeys = tree.value ? tree.value.getHalfCheckedKeys() : []
     
-    console.log('2. 选中的节点:', checkedKeys)
-    console.log('3. 半选中的节点:', halfCheckedKeys)
+    console.log('2. 完全选中的节点:', checkedKeys)
+    console.log('3. 半选中的节点(不会提交):', halfCheckedKeys)
     
-    // 合并所有选中的节点
-    const selectedKeys = [...checkedKeys, ...halfCheckedKeys]
-    console.log('4. 合并后的节点:', selectedKeys)
+    // 只使用完全选中的节点
+    const selectedKeys = [...checkedKeys]
+    console.log('4. 提交的节点:', selectedKeys)
     
     if (selectedKeys.length === 0) {
       console.log('5. 没有选中任何节点')
@@ -253,5 +287,15 @@ watch(permissionTree, () => {
 
 :deep(.el-tree) {
   background: transparent;
+}
+
+.tree-tip {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background-color: #f0f9eb;
+  border-radius: 4px;
+  border-left: 4px solid #67c23a;
+  color: #67c23a;
+  font-size: 12px;
 }
 </style>
