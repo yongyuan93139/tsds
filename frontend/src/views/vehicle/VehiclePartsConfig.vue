@@ -30,6 +30,7 @@
           @node-contextmenu="handleNodeRightClick"
           @node-click="handleNodeClick"
           highlight-current
+          v-model:expanded-keys="expandedKeys"
         >
           <template #default="{ node, data }">
             <span class="custom-tree-node">
@@ -105,12 +106,12 @@
           <div class="clearfix">
             <h3>配件详情</h3>
             <div class="button-group">
-              <el-button type="primary" @click="handleAddPartToSelected">添加配件</el-button>
-              <el-button type="primary" @click="handleEditPart">编辑配件</el-button>
-              <el-button type="warning" @click="showReplaceDialog">更换配件</el-button>
-              <el-button type="danger" @click="handleDisassociatePart">解绑配件</el-button>
-              <el-button type="danger" @click="handleScrapPart">报废配件</el-button>
-              <el-button type="success" @click="showAssociateDialog">关联配件</el-button>
+              <el-button type="primary" @click="handleAddPartToSelected">添加</el-button>
+              <el-button type="primary" @click="handleEditPart">编辑</el-button>
+              <el-button type="warning" @click="showReplaceDialog">更换</el-button>
+              <el-button type="danger" @click="handleDisassociatePart">解绑</el-button>
+              <el-button type="danger" @click="handleScrapPart">报废</el-button>
+              <el-button type="success" @click="showAssociateDialog">关联</el-button>
               <el-button type="info" @click="showHistoryDialog">操作历史</el-button>
             </div>
           </div>
@@ -128,62 +129,62 @@
                   <div class="info-column">
                     <div class="info-item">
                       <span class="label">配件类型:</span>
-                      <span class="value">{{ getPartTypeName(partDetail.value.typeId) }}</span>
+                      <span class="value">{{ getPartTypeName(partDetail.typeId) }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">配件编号:</span>
-                      <span class="value">{{ partDetail.value.partCode }}</span>
+                      <span class="value">{{ partDetail.partCode }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">资产编号:</span>
-                      <span class="value">{{ partDetail.value.assetNo || '无' }}</span>
+                      <span class="value">{{ partDetail.assetNo || '无' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">序列号:</span>
-                      <span class="value">{{ partDetail.value.serialNo || '无' }}</span>
+                      <span class="value">{{ partDetail.serialNo || '无' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">电子标签码:</span>
-                      <span class="value">{{ partDetail.value.rfidCode || '无' }}</span>
+                      <span class="value">{{ partDetail.rfidCode || '无' }}</span>
                     </div>
                    
                     <div class="info-item">
                       <span class="label">状态:</span>
-                      <span class="value">{{ getPartStatusText(partDetail.value.status) }}</span>
+                      <span class="value">{{ getPartStatusText(partDetail.status) }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">创建时间:</span>
-                      <span class="value">{{ partDetail.value.create_time ? formatDateTimeToHMS(partDetail.value.create_time) : '未激活' }}</span>
+                      <span class="value">{{ partDetail.createTime ? formatDateTimeToYMDHMS(partDetail.createTime) : '未激活' }}</span>
                     </div>
                   </div>
                   <div class="info-column">
                     <div class="info-item">
                       <span class="label">单位:</span>
-                      <span class="value">{{ partDetail.value.unit || '无' }}</span>
+                      <span class="value">{{ partDetail.unit || '无' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">规格型号:</span>
-                      <span class="value">{{ partDetail.value.specification || '无' }}</span>
+                      <span class="value">{{ partDetail.specification || '无' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">品牌:</span>
-                      <span class="value">{{ partDetail.value.brand || '无' }}</span>
+                      <span class="value">{{ partDetail.brand || '无' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">领用日期:</span>
-                      <span class="value">{{ formatDate(partDetail.value.productionDate) }}</span>
+                      <span class="value">{{ formatDate(partDetail.productionDate) }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">质保日期:</span>
-                      <span class="value">{{ partDetail.value.warrantyExpiryDate ? formatDate(partDetail.value.warrantyExpiryDate) : '无' }}</span>
+                      <span class="value">{{ partDetail.warrantyExpiryDate ? formatDate(partDetail.warrantyExpiryDate) : '无' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">使用日期:</span>
-                      <span class="value">{{ partDetail.value.activationDate ? formatDate(partDetail.value.activationDate) : '未激活' }}</span>
+                      <span class="value">{{ partDetail.activationDate ? formatDate(partDetail.activationDate) : '未激活' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">创建人:</span>
-                      <span class="value">{{ partDetail.value.creator || '无' }}</span>
+                      <span class="value">{{ partDetail.creator || '无' }}</span>
                     </div>
                   </div>
                 </div>
@@ -488,6 +489,7 @@ const loading = ref(false)
 const submitting = ref(false)
 const detailLoading = ref(false)
 
+
 // 操作历史相关
 const showHistorForm = ref(false)
 const operationHistory = ref([])
@@ -506,6 +508,7 @@ const associateFormData = reactive({
 // 树形数据
 const treeData = ref([])
 const treeRef = ref(null)
+const expandedKeys = ref([]) // 存储展开的节点keys
 const defaultProps = {
   children: 'children',
   label: 'label'
@@ -592,6 +595,8 @@ const replaceFormData = reactive({
   brand: '',
   productionDate: '',
   warrantyExpiryDate: '',
+  createTime: null,
+  creator: '',
   status: '1'
 })
 
@@ -626,6 +631,8 @@ const formData = reactive({
   activationDate: null,
   status: '1',
   vehicleId: null,
+  createTime: null,
+  creator: '',
   parentId: null
 })
 
@@ -636,29 +643,30 @@ const handleEditPart = () => {
   
   // 复制当前配件数据到表单
   Object.assign(formData, {
-    id: partDetail.value.id,
-    partCode: partDetail.value.partCode,
-    assetNo: partDetail.value.assetNo || '',
-    serialNo: partDetail.value.serialNo || '',
-    rfidCode: partDetail.value.rfidCode || '',
-    typeId: partDetail.value.typeId,
-    unit: partDetail.value.unit || '',
-    specification: partDetail.value.specification || '',
-    brand: partDetail.value.brand || '',
-    productionDate: partDetail.value.productionDate,
-    warrantyExpiryDate: partDetail.value.warrantyExpiryDate || '',
-    status: partDetail.value.status || '1',
-    activationDate: partDetail.value.activationDate || null,
-    vehicleId: partDetail.value.vehicleId,
-    parentId: partDetail.value.parentId,
-    manager: partDetail.value.manager || ''
-
+    id: partDetail.id,
+    partCode: partDetail.partCode,
+    assetNo: partDetail.assetNo || '',
+    serialNo: partDetail.serialNo || '',
+    rfidCode: partDetail.rfidCode || '',
+    typeId: partDetail.typeId,
+    unit: partDetail.unit || '',
+    specification: partDetail.specification || '',
+    brand: partDetail.brand || '',
+    productionDate: partDetail.productionDate,
+    warrantyExpiryDate: partDetail.warrantyExpiryDate || '',
+    status: partDetail.status || '1',
+    activationDate: partDetail.activationDate || null,
+    vehicleId: partDetail.vehicleId,
+    parentId: partDetail.parentId,
+    createTime: partDetail.createTime,
+    creator: partDetail.creator,
+    manager: partDetail.manager || ''
   })
 }
 
 // 显示操作历史对话框
 const showHistoryDialog = async () => {
-  if (!partDetail.value?.id) {
+  if (!partDetail?.id) {
     ElMessage.warning('请先选择配件')
     return
   }
@@ -667,7 +675,7 @@ const showHistoryDialog = async () => {
   historyLoading.value = true
   
   try {
-    const response = await getPartHistory(partDetail.value.id)
+    const response = await getPartHistory(partDetail.id)
     operationHistory.value = response || []
   } catch (error) {
     console.error('获取操作历史失败:', error)
@@ -699,29 +707,45 @@ const submitAssociate = async () => {
   //   ElMessage.warning('请选择车辆')
   //   return
   // }
-
   try {
     submitting.value = true
+    // 表单验证
+    if (!associateFormData.partId) {
+      ElMessage.warning('请选择要关联的配件')
+      return
+    }
 
-
-    // 直接使用 axios 发送请求（绕过拦截器）
-    axios.put(`/parts/${associateFormData.partId}/associate-vehicle`, null, {
-      params: { vehicleId: partDetail.value.vehicleId, parentId: partDetail.value.id }
-    }).then(response => {
+    try {
+      submitting.value = true
+      
+      // 使用 axios 发送请求
+      const response = await axios.put(`/parts/${associateFormData.partId}/associate-vehicle`, null, {
+        params: { vehicleId: partDetail.vehicleId, parentId: partDetail.id }
+      })
+      
       console.log("请求成功:", response);
-    }).catch(error => {
-      console.error("请求失败:", error.config); // 查看实际的请求配置
-    });
+      
+      // 先关闭对话框和重置表单
+      showAssociateForm.value = false
+      associateFormData.vehicleId = ''
+      associateFormData.partId = null
+      
+      // 更新树并显示新关联的配件
+      await updateTreeWithNewPart(response)
+      
+      ElMessage.success('关联配件成功')
+    } catch (error) {
+      console.error('关联配件失败:', error)
+      ElMessage.error(error.response?.data?.message || '关联配件失败')
+    } finally {
+      submitting.value = false
+    }
 
     // await associatePart({
     //   id: partDetail.value.id,
     //   vehicleId: associateFormData.vehicleId,
     //   parentId: associateFormData.parentId || null
     // })
-    
-    ElMessage.success('关联配件成功')
-    showAssociateForm.value = false
-    await refreshTree()
     
     // 重置表单数据
     associateFormData.vehicleId = ''
@@ -738,7 +762,7 @@ const submitAssociate = async () => {
 const handleDisassociatePart = async () => {
   try {
     // 判断当前配件的节点是否有下级配件，如果有则不允许解绑
-    if (partDetail.value.children && partDetail.value.children.length > 0) {
+    if (partDetail.children && partDetail.children.length > 0) {
       ElMessage.warning('当前配件存在下级配件，不允许解绑')
       return
     }
@@ -750,7 +774,7 @@ const handleDisassociatePart = async () => {
     })
     
     submitting.value = true
-    await disassociatePart(partDetail.value.id)
+    await disassociatePart(partDetail.id)
     
     ElMessage.success('解绑配件成功')
     await refreshTree()
@@ -775,7 +799,7 @@ const handleScrapPart = async () => {
     })
     
     submitting.value = true
-    await scrapPart(partDetail.value.id, remark)
+    await scrapPart(partDetail.id, remark)
     
     ElMessage.success('报废配件成功')
     await refreshTree()
@@ -804,7 +828,8 @@ watch(() => replaceFormData.replaceType, (newType) => {
       brand: '',
       productionDate: '',
       warrantyExpiryDate: '',
-      status: '1'
+      status: '1',
+      manager: partDetail.manager || ''
     })
   } else {
     // 切换到新增配件时，清空已有配件ID
@@ -821,12 +846,13 @@ const showReplaceDialog = async () => {
   }
 
   // 保存当前配件信息
-  Object.assign(partDetail, {
+  const currentPart = {
     id: selectedNode.value.partId,
     typeId: selectedNode.value.typeId,
     partCode: selectedNode.value.label,
     parentId: selectedNode.value.parentId
-  })
+  }
+  Object.assign(partDetail, currentPart)
 
   // 重置表单数据
   Object.assign(replaceFormData, {
@@ -836,7 +862,7 @@ const showReplaceDialog = async () => {
     assetNo: '',
     serialNo: '',
     rfidCode: '',
-    typeId: partDetail.typeId, // 使用当前配件的类型
+    typeId: currentPart.typeId, // 使用当前配件的类型
     unit: '',
     specification: '',
     brand: '',
@@ -911,7 +937,9 @@ const submitReplace = async () => {
     
     ElMessage.success('更换配件成功')
     showReplaceForm.value = false
-    await refreshTree()
+    // 更新树并显示新关联的配件
+    await updateTreeWithNewPart(response)
+    // await refreshTree()
   } catch (error) {
     console.error('更换配件失败:', error)
     ElMessage.error(error.response?.data?.message || '更换配件失败')
@@ -958,7 +986,10 @@ const handleNodeClick = async (data, node) => {
   
   // 清除之前的详情数据
   vehicleDetail.value = null
-  partDetail.value = null
+  // 重置partDetail的所有属性
+  Object.keys(partDetail).forEach(key => {
+    partDetail[key] = null
+  })
   
   detailLoading.value = true
   try {
@@ -966,21 +997,13 @@ const handleNodeClick = async (data, node) => {
       // 获取车辆详情
       const response = await getVehicleById(data.vehicleId)
       vehicleDetail.value = response
-    //   if (response.data.code === 200) {
-    //     vehicleDetail.value = response.data.data
-    //   } else {
-    //     ElMessage.error('获取车辆详情失败')
-    //   }
     } else if (data.type === 'part') {
       // 获取配件详情
       const response = await getPartByCode(data.label)
-      partDetail.value = response
-
-    //   if (response.data.code === 200) {
-    //     partDetail.value = response.data.data
-    //   } else {
-    //     ElMessage.error('获取配件详情失败')
-    //   }
+      // 确保所有必要的字段都存在
+      if (response) {
+        Object.assign(partDetail, response)
+      }
     }
   } catch (error) {
     ElMessage.error('获取详情数据失败')
@@ -1047,11 +1070,11 @@ const formatDate = (dateString) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-//格式化日期到时分秒
-const formatDateTimeToHMS = (dateString) => {
+//格式化日期到年月日时分
+const formatDateTimeToYMDHMS = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
-  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`
 }
 
 // 从选中节点添加配件
@@ -1078,7 +1101,17 @@ const handleAddPartToSelected = async () => {
 const refreshTree = async () => {
   loading.value = true
   try {
+    // 记录当前展开的节点状态
+    const currentExpandedKeys = [...expandedKeys.value]
+    
     await initData()
+    
+    // 等待DOM更新
+    await nextTick()
+    
+    // 恢复之前展开的节点状态
+    expandedKeys.value = currentExpandedKeys
+    
     // ElMessage.success('数据刷新成功')
   } catch (error) {
     ElMessage.error('数据刷新失败')
@@ -1129,6 +1162,20 @@ const initData = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 递归查找节点
+const findNodeById = (nodes, id) => {
+  for (const node of nodes) {
+    if (node.id === id) {
+      return node
+    }
+    if (node.children && node.children.length > 0) {
+      const found = findNodeById(node.children, id)
+      if (found) return found
+    }
+  }
+  return null
 }
 
 // 递归构建配件树
@@ -1249,8 +1296,28 @@ const submitForm = async () => {
       // 等待DOM更新
       await nextTick()
       
-      // 刷新整个树
+      // 刷新整个树并定位到更新的配件
+      const updatedPartKey = `part_${formData.id}`
       await refreshTree()
+      
+      // 等待树刷新完成
+      await nextTick()
+      
+      // 选中更新的配件节点并显示详情
+      if (treeRef.value) {
+        treeRef.value.setCurrentKey(updatedPartKey)
+        
+        const updatedNode = findNodeById(treeData.value, updatedPartKey)
+        if (updatedNode) {
+          await handleNodeClick(updatedNode)
+          
+          // 滚动到更新的节点
+          const nodeElement = document.querySelector(`[data-key="${updatedPartKey}"]`)
+          if (nodeElement) {
+            nodeElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }
+      }
       
       ElMessage.success('更新配件成功')
     } else {
@@ -1266,8 +1333,8 @@ const submitForm = async () => {
       // 等待DOM更新
       await nextTick()
       
-      // 刷新整个树
-      await refreshTree()
+      // 使用updateTreeWithNewPart更新树并定位到新配件
+      await updateTreeWithNewPart(response)
       
       ElMessage.success('添加配件成功')
     }
@@ -1305,6 +1372,9 @@ const updateTreeNode = (updatedPart) => {
 
 // 更新树形结构，添加新配件
 const updateTreeWithNewPart = async (newPart) => {
+  // 记录当前展开的节点状态
+  const currentExpandedKeys = [...expandedKeys.value]
+  
   // 直接刷新整个树
   await refreshTree()
   
@@ -1320,16 +1390,30 @@ const updateTreeWithNewPart = async (newPart) => {
     } else {
       path.push(`vehicle_${newPart.vehicleId}`)
     }
-    path.push(`part_${newPart.id}`)
+    const newPartKey = `part_${newPart.id}`
+    path.push(newPartKey)
     
-    // 展开路径上的所有节点
-    path.forEach(key => {
-      try {
-        treeRef.value.setExpandedKeys([key])
-      } catch (error) {
-        console.warn('展开节点失败:', error)
-      }
-    })
+    // 恢复之前展开的节点状态，并添加新节点的路径
+    expandedKeys.value = [...new Set([...currentExpandedKeys, ...path])]
+    
+    // 等待展开操作完成
+    await nextTick()
+    
+    // 选中新添加的配件节点
+    treeRef.value.setCurrentKey(newPartKey)
+    
+    // 滚动到新添加的节点
+    const nodeElement = document.querySelector(`[data-key="${newPartKey}"]`)
+    if (nodeElement) {
+      nodeElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+
+    // 获取新添加的节点数据并显示详情
+    const newNode = findNodeById(treeData.value, newPartKey)
+    
+    if (newNode) {
+      await handleNodeClick(newNode)
+    }
   }
 }
 

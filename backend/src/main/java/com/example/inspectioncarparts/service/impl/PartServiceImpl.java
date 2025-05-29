@@ -60,15 +60,16 @@ public class PartServiceImpl implements PartService {
             throw new RuntimeException("车辆不存在");
         }
 
-        Vehicle vehicle = vehicleMapper.selectById(part.getVehicleId());
+        String creator = SecurityUtils.getRequiredLoginUser() != null ?  SecurityUtils.getRequiredLoginUser().getRealName() : null;
+        part.setCreator(creator);
         partMapper.insert(part);
 
         // 记录操作历史
-        String creator = SecurityUtils.getRequiredLoginUser() != null ?  SecurityUtils.getRequiredLoginUser().getRealName() : null;
         partOperationHistoryService.recordOperation(part.getId(), PartOperationType.RECEIVE, creator, "设备领用", null);
 
         // 如果配件有vehicleId, 则写入操作历史配件以绑定车辆XXX
         if (part.getVehicleId() != null) {
+            Vehicle vehicle = vehicleMapper.selectById(part.getVehicleId());
             partOperationHistoryService.recordOperation(part.getId(),
                     PartOperationType.ASSOCIATE_VEHICLE,
                     creator,
@@ -211,6 +212,7 @@ public class PartServiceImpl implements PartService {
         }
 
         part.setVehicleId(vehicleId);
+        part.setParentId(parentId);
         return part;
     }
 
