@@ -1,6 +1,5 @@
 package com.example.inspectioncarparts.service;
 
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.inspectioncarparts.domain.dto.ReplacePartRequest;
 import com.example.inspectioncarparts.domain.entity.Part;
 import com.example.inspectioncarparts.common.Page;
@@ -36,11 +35,13 @@ public interface PartService {
 
     /**
      * 分页查询配件信息
-     * @param pageNum 页码
-     * @param pageSize 每页大小
+     *
+     * @param pageNum    页码
+     * @param pageSize   每页大小
+     * @param bindStatus
      * @return 配件列表
      */
-    Page<Part> listParts(int pageNum, int pageSize);
+    Page<Part> listParts(int pageNum, int pageSize, Integer bindStatus);
 
     /**
      * 获取配件树形结构

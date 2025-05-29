@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Service
@@ -132,12 +131,17 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Part> listParts(int pageNum, int pageSize) {
+    public Page<Part> listParts(int pageNum, int pageSize, Integer bindStatus) {
         // 创建分页对象
         com.baomidou.mybatisplus.extension.plugins.pagination.Page<Part> page = 
             new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(pageNum, pageSize);
         
         // 执行分页查询
+
+        QueryWrapper<Part> queryWrapper = new QueryWrapper<>();
+        if (bindStatus != null && bindStatus == 0) {
+            queryWrapper.isNull("vehicle_id");
+        }
         page = partMapper.selectPage(page, null);
 
         return Page.from(page);

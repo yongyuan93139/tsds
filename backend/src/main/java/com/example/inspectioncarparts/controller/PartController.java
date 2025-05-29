@@ -77,8 +77,10 @@ public class PartController {
     @ApiOperation("分页查询配件信息")
     public Result<Page<Part>> list(
             @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "20") int pageSize) {
-        Page<Part> parts = partService.listParts(pageNum, pageSize);
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false) Integer bindStatus
+    ) {
+        Page<Part> parts = partService.listParts(pageNum, pageSize, bindStatus);
         return Result.success(parts);
     }
 

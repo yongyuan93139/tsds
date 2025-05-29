@@ -127,54 +127,55 @@
                 <div class="info-grid">
                   <div class="info-column">
                     <div class="info-item">
+                      <span class="label">配件类型:</span>
+                      <span class="value">{{ getPartTypeName(partDetail.value.typeId) }}</span>
+                    </div>
+                    <div class="info-item">
                       <span class="label">配件编号:</span>
-                      <span class="value">{{ partDetail.partCode }}</span>
+                      <span class="value">{{ partDetail.value.partCode }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">资产编号:</span>
-                      <span class="value">{{ partDetail.assetNo || '无' }}</span>
+                      <span class="value">{{ partDetail.value.assetNo || '无' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">序列号:</span>
-                      <span class="value">{{ partDetail.serialNo || '无' }}</span>
+                      <span class="value">{{ partDetail.value.serialNo || '无' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">电子标签码:</span>
-                      <span class="value">{{ partDetail.rfidCode || '无' }}</span>
+                      <span class="value">{{ partDetail.value.rfidCode || '无' }}</span>
                     </div>
-                    <div class="info-item">
-                      <span class="label">配件类型:</span>
-                      <span class="value">{{ getPartTypeName(partDetail.typeId) }}</span>
-                    </div>
+                   
                     <div class="info-item">
                       <span class="label">状态:</span>
-                      <span class="value">{{ getPartStatusText(partDetail.status) }}</span>
+                      <span class="value">{{ getPartStatusText(partDetail.value.status) }}</span>
                     </div>
                   </div>
                   <div class="info-column">
                     <div class="info-item">
                       <span class="label">单位:</span>
-                      <span class="value">{{ partDetail.unit || '无' }}</span>
+                      <span class="value">{{ partDetail.value.unit || '无' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">规格型号:</span>
-                      <span class="value">{{ partDetail.specification || '无' }}</span>
+                      <span class="value">{{ partDetail.value.specification || '无' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">品牌:</span>
-                      <span class="value">{{ partDetail.brand || '无' }}</span>
+                      <span class="value">{{ partDetail.value.brand || '无' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">领用日期:</span>
-                      <span class="value">{{ formatDate(partDetail.productionDate) }}</span>
+                      <span class="value">{{ formatDate(partDetail.value.productionDate) }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">质保日期:</span>
-                      <span class="value">{{ partDetail.warrantyExpiryDate ? formatDate(partDetail.warrantyExpiryDate) : '无' }}</span>
+                      <span class="value">{{ partDetail.value.warrantyExpiryDate ? formatDate(partDetail.value.warrantyExpiryDate) : '无' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">使用日期:</span>
-                      <span class="value">{{ partDetail.activationDate ? formatDate(partDetail.activationDate) : '未激活' }}</span>
+                      <span class="value">{{ partDetail.value.activationDate ? formatDate(partDetail.value.activationDate) : '未激活' }}</span>
                     </div>
                   </div>
                 </div>
@@ -394,8 +395,16 @@
 
         <!-- 关联配件对话框 -->
         <el-dialog v-model="showAssociateForm" title="关联配件" width="500px">
+          <!-- 提示信息 -->
+          <el-alert
+            title="为当前选择的配件关联子配件"
+            type="info"
+            :closable="false"
+            show-icon
+            class="mb-20"
+          />
           <el-form label-width="120px">
-            <el-form-item label="选择车辆" required>
+            <!-- <el-form-item label="选择车辆" required>
               <el-select v-model="associateFormData.vehicleId" placeholder="请选择车辆">
                 <el-option
                   v-for="vehicle in vehicles"
@@ -404,12 +413,12 @@
                   :value="vehicle.id"
                 />
               </el-select>
-            </el-form-item>
+            </el-form-item> -->
             
-            <el-form-item label="父级配件">
+            <el-form-item label="选择子配件">
               <el-select 
-                v-model="associateFormData.parentId" 
-                placeholder="请选择父级配件（可选）"
+                v-model="associateFormData.partId" 
+                placeholder="请选择子配件"
                 filterable
                 clearable
               >
@@ -430,7 +439,7 @@
         </el-dialog>
 
         <!-- 操作历史对话框 -->
-        <el-dialog v-model="showHistoryDialog" title="配件操作历史" width="800px">
+        <el-dialog v-model="showHistorForm" title="配件操作历史" width="800px">
           <el-table :data="operationHistory" v-loading="historyLoading" style="width: 100%">
             <el-table-column prop="operationType" label="操作类型" width="120">
               <template #default="{row}">
@@ -465,14 +474,14 @@ import { getParts, createPart, getPartByCode, updatePart, replacePart, disassoci
 import { getPartTypes } from '@/api/partType'
 import { getVehicles, getVehicleById } from '@/api/vehicle'
 import { Van, SetUp, Refresh } from '@element-plus/icons-vue'
-
+import axios from '@/utils/request'
 // 加载状态
 const loading = ref(false)
 const submitting = ref(false)
 const detailLoading = ref(false)
 
 // 操作历史相关
-// const showHistoryDialog = ref(false)
+const showHistorForm = ref(false)
 const operationHistory = ref([])
 const historyLoading = ref(false)
 
@@ -482,27 +491,9 @@ const vehicles = ref([])
 const vehicleParts = ref([])
 const associateFormData = reactive({
   vehicleId: '',
-  parentId: null
+  partId: null
 })
 
-// 监听车辆选择变化
-watch(() => associateFormData.vehicleId, async (newVehicleId) => {
-  if (newVehicleId) {
-    try {
-      const response = await getParts({
-        pageNum: 1,
-        pageSize: 9999,
-        vehicleId: newVehicleId
-      })
-      vehicleParts.value = response.records || []
-    } catch (error) {
-      console.error('加载车辆配件失败:', error)
-      ElMessage.error('加载车辆配件失败')
-    }
-  } else {
-    vehicleParts.value = []
-  }
-})
 
 // 树形数据
 const treeData = ref([])
@@ -659,12 +650,12 @@ const showHistoryDialog = async () => {
     return
   }
   
-  showHistoryDialog.value = true
+  showHistorForm.value = true
   historyLoading.value = true
   
   try {
     const response = await getPartHistory(partDetail.value.id)
-    operationHistory.value = response.data || []
+    operationHistory.value = response || []
   } catch (error) {
     console.error('获取操作历史失败:', error)
     ElMessage.error('获取操作历史失败')
@@ -677,29 +668,43 @@ const showHistoryDialog = async () => {
 const showAssociateDialog = async () => {
   showAssociateForm.value = true
   try {
-    // 获取车辆列表
-    const response = await getVehicles()
-    vehicles.value = response.records || []
+   const response = await getParts({
+        pageNum: 1,
+        pageSize: 9999,
+        bindStatus: 0, // 只获取未绑定车辆的配件
+    })
+      vehicleParts.value = response.records || []
   } catch (error) {
-    console.error('加载车辆列表失败:', error)
+    console.error('加载配件列表失败:', error)
     ElMessage.error('加载车辆列表失败')
   }
 }
  
 // 提交关联配件
 const submitAssociate = async () => {
-  if (!associateFormData.vehicleId) {
-    ElMessage.warning('请选择车辆')
-    return
-  }
+  // if (!associateFormData.vehicleId) {
+  //   ElMessage.warning('请选择车辆')
+  //   return
+  // }
 
   try {
     submitting.value = true
-    await associatePart({
-      partId: partDetail.value.id,
-      vehicleId: associateFormData.vehicleId,
-      parentId: associateFormData.parentId || null
-    })
+
+
+    // 直接使用 axios 发送请求（绕过拦截器）
+    axios.put(`/parts/${associateFormData.partId}/associate-vehicle`, null, {
+      params: { vehicleId: partDetail.value.vehicleId, parentId: partDetail.value.id }
+    }).then(response => {
+      console.log("请求成功:", response);
+    }).catch(error => {
+      console.error("请求失败:", error.config); // 查看实际的请求配置
+    });
+
+    // await associatePart({
+    //   id: partDetail.value.id,
+    //   vehicleId: associateFormData.vehicleId,
+    //   parentId: associateFormData.parentId || null
+    // })
     
     ElMessage.success('关联配件成功')
     showAssociateForm.value = false
@@ -707,7 +712,7 @@ const submitAssociate = async () => {
     
     // 重置表单数据
     associateFormData.vehicleId = ''
-    associateFormData.parentId = null
+    associateFormData.partId = null
   } catch (error) {
     console.error('关联配件失败:', error)
     ElMessage.error(error.response?.data?.message || '关联配件失败')
@@ -719,6 +724,12 @@ const submitAssociate = async () => {
 // 处理解绑配件
 const handleDisassociatePart = async () => {
   try {
+    // 判断当前配件的节点是否有下级配件，如果有则不允许解绑
+    if (partDetail.value.children && partDetail.value.children.length > 0) {
+      ElMessage.warning('当前配件存在下级配件，不允许解绑')
+      return
+    }
+
     await ElMessageBox.confirm('确定要解绑此配件吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
@@ -975,12 +986,12 @@ const getPartTypeName = (typeId) => {
 // 获取操作历史类型文本
 const getHistoryTypeText = (type) => {
   const typeMap = {
-    'RECEIVE': '领用',
-    'REPAIR': '维修',
-    'SCRAP': '报废',
+    1: '领用',
+    4: '维修',
+    5: '报废',
     'REPLACE': '更换',
-    'ASSOCIATE': '关联',
-    'DISASSOCIATE': '解绑'
+    2: '关联',
+    3: '解绑'
   }
   return typeMap[type] || type
 }
@@ -988,12 +999,12 @@ const getHistoryTypeText = (type) => {
 // 获取操作历史标签样式
 const getHistoryTagType = (type) => {
   const typeMap = {
-    'RECEIVE': 'success',
-    'REPAIR': 'warning',
-    'SCRAP': 'danger',
-    'REPLACE': 'primary',
-    'ASSOCIATE': 'info',
-    'DISASSOCIATE': 'danger'
+    1: 'success',
+    4: 'warning',
+   5: 'danger',
+    'REPLACE': 'primary', 
+    2: 'info',
+    3: 'danger'
   }
   return typeMap[type] || ''
 }
