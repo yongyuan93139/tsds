@@ -142,7 +142,7 @@ public class PartServiceImpl implements PartService {
         if (bindStatus != null && bindStatus == 0) {
             queryWrapper.isNull("vehicle_id");
         }
-        page = partMapper.selectPage(page, null);
+        page = partMapper.selectPage(page, queryWrapper);
 
         return Page.from(page);
     }
@@ -411,9 +411,9 @@ public class PartServiceImpl implements PartService {
 
         // 3. 更新配件状态为报废
         UpdateWrapper<Part> updateWrapper = new UpdateWrapper<>();
-        updateWrapper.set("status", PartStatus.SCRAPPED.getCode());
         updateWrapper.eq("id", partId);
-        updateWrapper.eq("remark", remark);
+        updateWrapper.set("status", PartStatus.SCRAPPED.getCode());
+        updateWrapper.set("remark", remark);
         partMapper.update(null, updateWrapper);
 
         // 记录操作历史
@@ -438,7 +438,8 @@ public class PartServiceImpl implements PartService {
         if (oldPart == null) {
             throw new RuntimeException("原配件不存在");
         }
-
+        Integer oldVehicleId = oldPart.getVehicleId();
+        Integer oldParentId = oldPart.getParentId();
         // 1. 解绑原配件
         disassociateFromVehicle(request.getOldPartId());
 
@@ -451,8 +452,8 @@ public class PartServiceImpl implements PartService {
 
         }
         // 2. 保存新配件
-        newPart.setVehicleId(oldPart.getVehicleId());
-        newPart.setParentId(oldPart.getParentId());
+        newPart.setVehicleId(oldVehicleId);
+        newPart.setParentId(oldParentId);
         Part created = replaceExist ? updatePart(newPart) : createPart(newPart);
 
         return created;

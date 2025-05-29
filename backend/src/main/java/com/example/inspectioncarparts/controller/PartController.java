@@ -177,8 +177,8 @@ public class PartController {
         String detailUrl = "http://192.168.54.207:3001/parts/detail/" + partCode;
 
         // 2. 生成二维码配置
-        int width = 300;
-        int height = 300;
+        int width = 100;
+        int height = 100;
         String format = "png";
 
         // 3. 生成二维码图片

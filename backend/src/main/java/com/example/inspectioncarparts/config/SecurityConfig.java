@@ -78,6 +78,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/v3/api-docs").permitAll()
                 .antMatchers("/webjars/**").permitAll()
                 .antMatchers("/doc.html").permitAll()
+                .antMatchers("/api/parts/detail/**").permitAll()
+                .antMatchers("/api/parts/qr-code/**").permitAll()
                 .antMatchers("/api/login-config").permitAll();
 
         // 根据登录配置决定是否需要认证
