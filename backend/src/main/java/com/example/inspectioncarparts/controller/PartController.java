@@ -5,12 +5,15 @@ import com.example.inspectioncarparts.common.Result;
 import com.example.inspectioncarparts.domain.dto.BatchAssociatePartsRequest;
 import com.example.inspectioncarparts.domain.dto.ReplacePartRequest;
 import com.example.inspectioncarparts.domain.entity.Part;
+import com.example.inspectioncarparts.domain.enums.PartStatus;
 import com.example.inspectioncarparts.service.PartService;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -88,9 +91,12 @@ public class PartController {
 
     @PutMapping("/{id}/associate-vehicle")
     @ApiOperation("关联配件到车辆")
-    public Result<Part> associateVehicle(@PathVariable Integer id, @RequestParam Integer vehicleId) {
+    public Result<Part> associateVehicle(@PathVariable Integer id,
+                                         @RequestParam Integer vehicleId,
+                                         @RequestParam Integer parentId
+                                         ) {
         try {
-            Part updated = partService.associateWithVehicle(id, vehicleId);
+            Part updated = partService.associateWithVehicle(id, vehicleId,parentId);
             return Result.success(updated);
         } catch (RuntimeException e) {
             return Result.fail(e.getMessage());
@@ -195,16 +201,21 @@ public class PartController {
     @PostMapping("/replace")
     @ApiOperation("更换配件")
     public Result<Part> replacePart(@RequestBody ReplacePartRequest request) {
-        try {
-            // 1. 解绑原配件
-            partService.disassociateFromVehicle(request.getOldPartId());
-            
-            // 2. 保存新配件
-            Part created = partService.createPart(request.getNewPart());
-            
-            return Result.success(created);
-        } catch (RuntimeException e) {
-            return Result.fail(e.getMessage());
-        }
+        Part created = partService.replacePart(request);
+        return Result.success(created);
+    }
+
+    @PutMapping("/{id}/scrap")
+    @ApiImplicitParams({
+        @ApiImplicitParam(name = "id", value = "配件ID", required = true, dataType = "Integer", paramType = "path"),
+        @ApiImplicitParam(name = "remark", value = "报废原因", required = false, dataType = "String", paramType = "query"),
+        @ApiImplicitParam(name = "operator", value = "操作人", required = true, dataType = "String", paramType = "query")
+    })
+    @ApiOperation(value = "报废配件", notes = "将配件标记为报废状态，如果配件已绑定车辆会自动解绑")
+    public Result<Part> scrapPart(
+            @PathVariable Integer id,
+            @RequestParam(required = false) String remark) {
+        Part updated = partService.scrapPart(id, remark);
+        return Result.success(updated);
     }
 }

@@ -20,7 +20,7 @@
               {{ getTypeName(part.typeId) }}
             </template>
           </el-descriptions-item>
-          <el-descriptions-item label="生产日期"  >  {{ formatDate(part.productionDate) }}</el-descriptions-item>
+          <el-descriptions-item label="领用日期"  >  {{ formatDate(part.productionDate) }}</el-descriptions-item>
          
           <el-descriptions-item label="状态">
             <el-tag :type="getStatusType(part.status)">

@@ -23,7 +23,7 @@ jwt:
 
 app:
   security:
-    requireLogin: 0 # 1: 需要登录验证, 0: 不需要登录验证
+    requireLogin: 1 # 1: 需要登录验证, 0: 不需要登录验证
 
 mybatis-plus:
   configuration:

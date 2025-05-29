@@ -42,3 +42,27 @@ export const batchAssociateVehicle = (data) => {
 export const replacePart = (data) => {
   return axios.post('/parts/replace', data)
 }
+
+// 解绑配件
+export const disassociatePart = (id) => {
+  return axios.put(`/parts/${id}/disassociate-vehicle`)
+}
+
+// 关联配件
+export const associatePart = (id, vehicleId, parentId) => {
+  return axios.put(`/parts/${id}/associate-vehicle`, null, {
+    params: { vehicleId, parentId }
+  })
+}
+
+// 报废配件
+export const scrapPart = (id, remark) => {
+  return axios.put(`/parts/${id}/scrap`, null, {
+    params: { remark }
+  })
+}
+
+// 获取配件操作历史
+export const getPartHistory = (partId) => {
+  return axios.get(`/parts/operations/${partId}/history`)
+}

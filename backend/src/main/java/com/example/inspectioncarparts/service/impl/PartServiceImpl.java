@@ -2,23 +2,32 @@ package com.example.inspectioncarparts.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.inspectioncarparts.common.Page;
 import com.example.inspectioncarparts.domain.dto.ReplacePartRequest;
 import com.example.inspectioncarparts.domain.entity.Part;
+import com.example.inspectioncarparts.domain.entity.Vehicle;
+import com.example.inspectioncarparts.domain.enums.PartOperationType;
+import com.example.inspectioncarparts.domain.enums.PartStatus;
 import com.example.inspectioncarparts.mapper.PartMapper;
 import com.example.inspectioncarparts.mapper.PartTypeMapper;
 import com.example.inspectioncarparts.mapper.VehicleMapper;
+import com.example.inspectioncarparts.service.PartOperationHistoryService;
 import com.example.inspectioncarparts.service.PartService;
+import com.example.inspectioncarparts.util.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Service
 public class PartServiceImpl implements PartService {
+
+    @Autowired
+    private PartOperationHistoryService partOperationHistoryService;
+    
     @Autowired
     private PartMapper partMapper;
     
@@ -51,8 +60,22 @@ public class PartServiceImpl implements PartService {
         if (part.getVehicleId() != null && vehicleMapper.selectById(part.getVehicleId()) == null) {
             throw new RuntimeException("车辆不存在");
         }
-        
+
+        Vehicle vehicle = vehicleMapper.selectById(part.getVehicleId());
         partMapper.insert(part);
+
+        // 记录操作历史
+        String creator = SecurityUtils.getRequiredLoginUser() != null ?  SecurityUtils.getRequiredLoginUser().getRealName() : null;
+        partOperationHistoryService.recordOperation(part.getId(), PartOperationType.RECEIVE, creator, "设备领用", null);
+
+        // 如果配件有vehicleId, 则写入操作历史配件以绑定车辆XXX
+        if (part.getVehicleId() != null) {
+            partOperationHistoryService.recordOperation(part.getId(),
+                    PartOperationType.ASSOCIATE_VEHICLE,
+                    creator,
+                    String.format("绑定车辆[%s]",vehicle.getVehicleName()),
+                    part.getVehicleId());
+        }
         return part;
     }
 
@@ -150,7 +173,7 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional
-    public Part associateWithVehicle(Integer partId, Integer vehicleId) {
+    public Part associateWithVehicle(Integer partId, Integer vehicleId, Integer parentId) {
         Part part = partMapper.selectById(partId);
         if (part == null) {
             throw new RuntimeException("配件不存在");
@@ -159,21 +182,38 @@ public class PartServiceImpl implements PartService {
         if (vehicleId != null && vehicleMapper.selectById(vehicleId) == null) {
             throw new RuntimeException("车辆不存在");
         }
-        
+
         partMapper.update(null, new UpdateWrapper<Part>()
                 .eq("id", partId)
-                .set("vehicle_id", null)
-                .set("activation_date", null)
-        )
+                .set("vehicle_id", vehicleId)
+                .set("parent_id", parentId)
+        );
 
-        ;
+        // 如果车辆ID不为空，则写入操作历史，配件和车辆绑定
+        if (vehicleId != null) {
+            Vehicle vehicle = vehicleMapper.selectById(vehicleId);
+            partOperationHistoryService.recordOperation(partId,
+                    PartOperationType.ASSOCIATE_VEHICLE,
+                    SecurityUtils.getRealName(),
+                    String.format("绑定车辆[%s]",vehicle.getVehicleName()),
+                    vehicleId);
+        } else {
+            Vehicle vehicle = vehicleMapper.selectById(part.getVehicleId());
+            partOperationHistoryService.recordOperation(partId,
+                    PartOperationType.DISASSOCIATE_VEHICLE,
+                    SecurityUtils.getRealName(),
+                    String.format("解绑车辆[%s]",vehicle.getVehicleName()),
+                    part.getVehicleId());
+        }
+
+        part.setVehicleId(vehicleId);
         return part;
     }
 
     @Override
     @Transactional
     public Part disassociateFromVehicle(Integer partId) {
-        return associateWithVehicle(partId, null);
+        return associateWithVehicle(partId, null, null);
     }
 
     @Override
@@ -224,17 +264,10 @@ public class PartServiceImpl implements PartService {
 
         // 批量关联
         for (Integer partId : partIds) {
-            associateWithVehicle(partId, vehicleId);
+            associateWithVehicle(partId, vehicleId, null);
         }
-//        // 批量更新配件的vehicleId
-        List<Part> updatedParts = new ArrayList<>();
-//        for (Part part : parts) {
-//            part.setVehicleId(vehicleId);
-//            partMapper.updateById(part);
-//            updatedParts.add(part);
-//        }
         
-        return updatedParts;
+        return parts;
     }
 
     @Override
@@ -244,12 +277,12 @@ public class PartServiceImpl implements PartService {
         if (vehicleMapper.selectById(vehicleId) == null) {
             throw new RuntimeException("车辆不存在");
         }
-        
+
         // 使用UpdateWrapper直接更新所有关联配件的vehicle_id为null
         UpdateWrapper<Part> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq("vehicle_id", vehicleId)
                    .set("vehicle_id", null);
-        
+
         // 执行批量更新
         partMapper.update(null, updateWrapper);
     }
@@ -262,15 +295,15 @@ public class PartServiceImpl implements PartService {
     @Override
     public List<Part> listByVehicleAndType(Integer vehicleId, Integer partTypeId) {
         QueryWrapper<Part> queryWrapper = new QueryWrapper<>();
-        
+
         if (vehicleId != null) {
             queryWrapper.eq("vehicle_id", vehicleId);
         }
-        
+
         if (partTypeId != null) {
             queryWrapper.eq("type_id", partTypeId);
         }
-        
+
         return partMapper.selectList(queryWrapper);
     }
 
@@ -282,20 +315,142 @@ public class PartServiceImpl implements PartService {
         if (oldPart == null) {
             throw new RuntimeException("原配件不存在");
         }
-        
+
         // 2. 解绑原配件与车辆的关联
         disassociateFromVehicle(oldPartId);
-        
+
         // 3. 保存新配件
         // 如果新配件没有指定车辆ID，使用原配件的车辆ID
         if (newPart.getVehicleId() == null && oldPart.getVehicleId() != null) {
             newPart.setVehicleId(oldPart.getVehicleId());
         }
-        
+
         // 创建新配件
         Part created = createPart(newPart);
-        
+
         return created;
     }
 
+    @Override
+    @Transactional
+    public Part receivePart(Integer partId, String operator) {
+        // 获取配件信息
+        Part part = partMapper.selectById(partId);
+        if (part == null) {
+            throw new RuntimeException("配件不存在");
+        }
+
+        // 检查配件当前状态
+        if ("2".equals(part.getStatus())) {
+            throw new RuntimeException("配件已经处于领用状态");
+        }
+
+//        // 更新配件状态为"已领用"
+//        part.setStatus("2"); // 2表示已领用状态
+//        partMapper.updateById(part);
+
+        // 记录操作历史
+        partOperationHistoryService.recordOperation(
+            partId,
+            PartOperationType.RECEIVE,
+            operator,
+            "配件领用",
+            null
+        );
+
+        return part;
+    }
+
+    @Override
+    @Transactional
+    public Part repairPart(Integer partId, String operator, String remark) {
+        // 获取配件信息
+        Part part = partMapper.selectById(partId);
+        if (part == null) {
+            throw new RuntimeException("配件不存在");
+        }
+
+        // 检查配件当前状态
+//        if ("3".equals(part.getStatus())) {
+//            throw new RuntimeException("配件已经处于维修状态");
+//        }
+
+        // 更新配件状态为"维修中"
+//        part.setStatus("3"); // 3表示维修中状态
+//        partMapper.updateById(part);
+
+        // 记录操作历史
+        partOperationHistoryService.recordOperation(
+            partId,
+            PartOperationType.REPAIR,
+            operator,
+            remark,
+            null
+        );
+
+        return part;
+    }
+
+    @Override
+    @Transactional
+    public Part scrapPart(Integer partId, String remark) {
+        // 1. 获取配件信息
+        Part part = getPartById(partId);
+        if (part == null) {
+            throw new RuntimeException("配件不存在");
+        }
+
+        // 2. 如果配件绑定了车辆，先解绑
+        if (part.getVehicleId() != null) {
+            disassociateFromVehicle(partId);
+        }
+
+        // 3. 更新配件状态为报废
+        UpdateWrapper<Part> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.set("status", PartStatus.SCRAPPED.getCode());
+        updateWrapper.eq("id", partId);
+        updateWrapper.eq("remark", remark);
+        partMapper.update(null, updateWrapper);
+
+        // 记录操作历史
+        partOperationHistoryService.recordOperation(
+            partId,
+            PartOperationType.SCRAP,
+            SecurityUtils.getRealName(),
+            remark,
+            part.getVehicleId()
+        );
+
+        return part;
+    }
+
+    @Override
+    @Transactional
+    public Part replacePart(ReplacePartRequest request) {
+        boolean replaceExist = request.getNewPartId() != null;
+        Part newPart = request.getNewPart();
+        // 查询老配件
+        Part oldPart = partMapper.selectById(request.getOldPartId());
+        if (oldPart == null) {
+            throw new RuntimeException("原配件不存在");
+        }
+
+        // 1. 解绑原配件
+        disassociateFromVehicle(request.getOldPartId());
+
+        if (replaceExist) {
+            // 更换已有配件 2.1 检查新配件是否存在
+            newPart = partMapper.selectById(request.getNewPartId());
+            if (newPart == null) {
+                throw new RuntimeException("新配件不存在");
+            }
+
+        }
+        // 2. 保存新配件
+        newPart.setVehicleId(oldPart.getVehicleId());
+        newPart.setParentId(oldPart.getParentId());
+        Part created = replaceExist ? updatePart(newPart) : createPart(newPart);
+
+        return created;
+    }
 }

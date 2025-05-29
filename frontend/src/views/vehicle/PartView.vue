@@ -34,7 +34,7 @@
           </el-table-column>          
           <el-table-column 
             prop="productionDate" 
-            label="生产日期"
+            label="领用日期"
             :formatter="(row) => formatDate(row.productionDate)"
           />
   <el-table-column prop="status" label="状态" >
@@ -94,7 +94,7 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="生产日期">
+          <el-form-item label="领用日期">
               <el-date-picker
               v-model="form.productionDate"
               type="date"

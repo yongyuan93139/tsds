@@ -108,6 +108,10 @@
               <el-button type="primary" @click="handleAddPartToSelected">添加配件</el-button>
               <el-button type="primary" @click="handleEditPart">编辑配件</el-button>
               <el-button type="warning" @click="showReplaceDialog">更换配件</el-button>
+              <el-button type="danger" @click="handleDisassociatePart">解绑配件</el-button>
+              <el-button type="danger" @click="handleScrapPart">报废配件</el-button>
+              <el-button type="success" @click="showAssociateDialog">关联配件</el-button>
+              <el-button type="info" @click="showHistoryDialog">操作历史</el-button>
             </div>
           </div>
           <el-skeleton :loading="detailLoading" animated>
@@ -286,78 +290,100 @@
             :rules="rules"
             label-width="120px"
           >
-            <div class="form-grid">
-              <div class="form-column">
-                <el-form-item label="配件类型" prop="typeId">
-                  <el-select v-model="replaceFormData.typeId" placeholder="请选择配件类型">
-                    <el-option
-                      v-for="type in partTypes"
-                      :key="type.id"
-                      :label="type.typeName"
-                      :value="type.id"
+            <el-form-item label="更换方式" prop="replaceType">
+              <el-radio-group v-model="replaceFormData.replaceType">
+                <el-radio label="new">新增配件</el-radio>
+                <el-radio label="existing">关联已有配件</el-radio>
+              </el-radio-group>
+            </el-form-item>
+
+            <!-- 关联已有配件 -->
+            <template v-if="replaceFormData.replaceType === 'existing'">
+              <el-form-item label="选择配件" prop="existingPartId">
+                <el-select 
+                  v-model="replaceFormData.existingPartId" 
+                  placeholder="请选择未绑定的配件"
+                  filterable
+                >
+                  <el-option
+                    v-for="part in unassignedParts"
+                    :key="part.id"
+                    :label="part.partCode + ' - ' + getPartTypeName(part.typeId)"
+                    :value="part.id"
+                    :disabled="part.typeId !== partDetail.typeId"
+                  />
+                </el-select>
+              </el-form-item>
+            </template>
+
+            <!-- 新增配件表单 -->
+            <template v-else>
+              <div class="form-grid">
+                <div class="form-column">
+                  <el-form-item label="配件类型">
+                    <el-input :value="getPartTypeName(partDetail.typeId)" disabled />
+                  </el-form-item>
+
+                  <el-form-item label="资产编号" prop="assetNo">
+                    <el-input v-model="replaceFormData.assetNo" placeholder="请输入新配件资产编号" />
+                  </el-form-item>
+
+                  <el-form-item label="序列号" prop="serialNo">
+                    <el-input v-model="replaceFormData.serialNo" placeholder="请输入新配件序列号" />
+                  </el-form-item>
+
+                  <el-form-item label="电子标签码" prop="rfidCode">
+                    <el-input v-model="replaceFormData.rfidCode" placeholder="请输入新配件电子标签码" />
+                  </el-form-item>
+
+                  <el-form-item label="领用日期" prop="productionDate">
+                    <el-date-picker
+                      v-model="replaceFormData.productionDate"
+                      type="date"
+                      placeholder="选择新配件领用日期"
+                      format="YYYY-MM-DD"
+                      value-format="YYYY-MM-DD"
                     />
-                  </el-select>
-                </el-form-item>
+                  </el-form-item>
 
-                <el-form-item label="资产编号" prop="assetNo">
-                  <el-input v-model="replaceFormData.assetNo" placeholder="请输入新配件资产编号" />
-                </el-form-item>
+                  <el-form-item label="状态" prop="status">
+                    <el-select v-model="replaceFormData.status" placeholder="请选择新配件状态">
+                      <el-option label="正常" value="1" />
+                      <el-option label="维修中" value="2" />
+                      <el-option label="报废" value="3" />
+                    </el-select>
+                  </el-form-item>
+                </div>
 
-                <el-form-item label="序列号" prop="serialNo">
-                  <el-input v-model="replaceFormData.serialNo" placeholder="请输入新配件序列号" />
-                </el-form-item>
+                <div class="form-column">
+                  <el-form-item label="配件编号" prop="partCode">
+                    <el-input v-model="replaceFormData.partCode" placeholder="请输入新配件编号" />
+                  </el-form-item>
 
-                <el-form-item label="电子标签码" prop="rfidCode">
-                  <el-input v-model="replaceFormData.rfidCode" placeholder="请输入新配件电子标签码" />
-                </el-form-item>
+                  <el-form-item label="规格型号" prop="specification">
+                    <el-input v-model="replaceFormData.specification" placeholder="请输入新配件规格型号" />
+                  </el-form-item>
 
-                <el-form-item label="领用日期" prop="productionDate">
-                  <el-date-picker
-                    v-model="replaceFormData.productionDate"
-                    type="date"
-                    placeholder="选择新配件领用日期"
-                    format="YYYY-MM-DD"
-                    value-format="YYYY-MM-DD"
-                  />
-                </el-form-item>
+                  <el-form-item label="单位" prop="unit">
+                    <el-input v-model="replaceFormData.unit" placeholder="请输入新配件单位" />
+                  </el-form-item>
 
-                <el-form-item label="状态" prop="status">
-                  <el-select v-model="replaceFormData.status" placeholder="请选择新配件状态">
-                    <el-option label="正常" value="1" />
-                    <el-option label="维修中" value="2" />
-                    <el-option label="报废" value="3" />
-                  </el-select>
-                </el-form-item>
+                  <el-form-item label="品牌" prop="brand">
+                    <el-input v-model="replaceFormData.brand" placeholder="请输入新配件品牌" />
+                  </el-form-item>
+
+                  <el-form-item label="质保日期" prop="warrantyExpiryDate">
+                    <el-date-picker
+                      v-model="replaceFormData.warrantyExpiryDate"
+                      type="date"
+                      placeholder="选择新配件质保日期"
+                      format="YYYY-MM-DD"
+                      value-format="YYYY-MM-DD"
+                    />
+                  </el-form-item>
+                </div>
               </div>
-
-              <div class="form-column">
-                <el-form-item label="配件编号" prop="partCode">
-                  <el-input v-model="replaceFormData.partCode" placeholder="请输入新配件编号" />
-                </el-form-item>
-
-                <el-form-item label="规格型号" prop="specification">
-                  <el-input v-model="replaceFormData.specification" placeholder="请输入新配件规格型号" />
-                </el-form-item>
-
-                <el-form-item label="单位" prop="unit">
-                  <el-input v-model="replaceFormData.unit" placeholder="请输入新配件单位" />
-                </el-form-item>
-
-                <el-form-item label="品牌" prop="brand">
-                  <el-input v-model="replaceFormData.brand" placeholder="请输入新配件品牌" />
-                </el-form-item>
-
-                <el-form-item label="质保日期" prop="warrantyExpiryDate">
-                  <el-date-picker
-                    v-model="replaceFormData.warrantyExpiryDate"
-                    type="date"
-                    placeholder="选择新配件质保日期"
-                    format="YYYY-MM-DD"
-                    value-format="YYYY-MM-DD"
-                  />
-                </el-form-item>
-              </div>
-            </div>
+            </template>
           </el-form>
 
           <template #footer>
@@ -365,15 +391,77 @@
             <el-button type="primary" @click="submitReplace" :loading="submitting">确认更换</el-button>
           </template>
         </el-dialog>
+
+        <!-- 关联配件对话框 -->
+        <el-dialog v-model="showAssociateForm" title="关联配件" width="500px">
+          <el-form label-width="120px">
+            <el-form-item label="选择车辆" required>
+              <el-select v-model="associateFormData.vehicleId" placeholder="请选择车辆">
+                <el-option
+                  v-for="vehicle in vehicles"
+                  :key="vehicle.id"
+                  :label="vehicle.vehicleName"
+                  :value="vehicle.id"
+                />
+              </el-select>
+            </el-form-item>
+            
+            <el-form-item label="父级配件">
+              <el-select 
+                v-model="associateFormData.parentId" 
+                placeholder="请选择父级配件（可选）"
+                filterable
+                clearable
+              >
+                <el-option
+                  v-for="part in vehicleParts"
+                  :key="part.id"
+                  :label="`${part.partCode} (${getPartTypeName(part.typeId)})`"
+                  :value="part.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-form>
+
+          <template #footer>
+            <el-button @click="showAssociateForm = false">取消</el-button>
+            <el-button type="primary" @click="submitAssociate">确认关联</el-button>
+          </template>
+        </el-dialog>
+
+        <!-- 操作历史对话框 -->
+        <el-dialog v-model="showHistoryDialog" title="配件操作历史" width="800px">
+          <el-table :data="operationHistory" v-loading="historyLoading" style="width: 100%">
+            <el-table-column prop="operationType" label="操作类型" width="120">
+              <template #default="{row}">
+                <el-tag :type="getHistoryTagType(row.operationType)">
+                  {{ getHistoryTypeText(row.operationType) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="operationTime" label="操作时间" width="180">
+              <template #default="{row}">
+                {{ formatDateTime(row.operationTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="operator" label="操作人" width="120" />
+            <el-table-column prop="remark" label="备注" />
+            <el-table-column label="相关ID" width="100">
+              <template #default="{row}">
+                {{ row.relatedId || '-' }}
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-dialog>
       </el-main>
     </el-container>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getParts, createPart, getPartByCode, updatePart, replacePart } from '@/api/part'
+import { ref, onMounted, reactive, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { getParts, createPart, getPartByCode, updatePart, replacePart, disassociatePart, scrapPart, associatePart, getPartHistory } from '@/api/part'
 import { getPartTypes } from '@/api/partType'
 import { getVehicles, getVehicleById } from '@/api/vehicle'
 import { Van, SetUp, Refresh } from '@element-plus/icons-vue'
@@ -382,6 +470,39 @@ import { Van, SetUp, Refresh } from '@element-plus/icons-vue'
 const loading = ref(false)
 const submitting = ref(false)
 const detailLoading = ref(false)
+
+// 操作历史相关
+// const showHistoryDialog = ref(false)
+const operationHistory = ref([])
+const historyLoading = ref(false)
+
+// 关联配件相关
+const showAssociateForm = ref(false)
+const vehicles = ref([])
+const vehicleParts = ref([])
+const associateFormData = reactive({
+  vehicleId: '',
+  parentId: null
+})
+
+// 监听车辆选择变化
+watch(() => associateFormData.vehicleId, async (newVehicleId) => {
+  if (newVehicleId) {
+    try {
+      const response = await getParts({
+        pageNum: 1,
+        pageSize: 9999,
+        vehicleId: newVehicleId
+      })
+      vehicleParts.value = response.records || []
+    } catch (error) {
+      console.error('加载车辆配件失败:', error)
+      ElMessage.error('加载车辆配件失败')
+    }
+  } else {
+    vehicleParts.value = []
+  }
+})
 
 // 树形数据
 const treeData = ref([])
@@ -402,7 +523,23 @@ const currentNode = ref(null)
 // 节点选择相关
 const selectedNode = ref(null)
 const vehicleDetail = ref(null)
-const partDetail = ref(null)
+const partDetail = reactive({
+  id: '',
+  typeId: '',
+  partCode: '',
+  parentId: null,
+  assetNo: '',
+  serialNo: '',
+  rfidCode: '',
+  unit: '',
+  specification: '',
+  brand: '',
+  productionDate: '',
+  warrantyExpiryDate: '',
+  status: '',
+  activationDate: null,
+  vehicleId: null
+})
 
 // 表单相关
 const showAddForm = ref(false)
@@ -412,7 +549,37 @@ const formRef = ref(null)
 // 更换配件相关
 const showReplaceForm = ref(false)
 const replaceFormRef = ref(null)
+const unassignedParts = ref([])
+
+// 获取根节点车辆ID
+const getRootVehicleId = (node) => {
+  if (!node) return null
+  if (node.type === 'vehicle') return node.vehicleId
+  
+  // 在树数据中查找当前节点的根节点
+  const findRootVehicle = (nodes, targetId) => {
+    for (const node of nodes) {
+      if (node.type === 'vehicle' && hasNodeInChildren(node, targetId)) {
+        return node.vehicleId
+      }
+    }
+    return null
+  }
+  
+  return findRootVehicle(treeData.value, node.id)
+}
+
+// 检查节点是否在子节点中
+const hasNodeInChildren = (node, targetId) => {
+  if (node.id === targetId) return true
+  if (node.children) {
+    return node.children.some(child => hasNodeInChildren(child, targetId))
+  }
+  return false
+}
 const replaceFormData = reactive({
+  replaceType: 'new',
+  existingPartId: '',
   partCode: '',
   assetNo: '',
   serialNo: '',
@@ -425,6 +592,23 @@ const replaceFormData = reactive({
   warrantyExpiryDate: '',
   status: '1'
 })
+
+// 加载未分配的配件(与当前配件类型相同且未关联车辆)
+const loadUnassignedParts = async () => {
+  try {
+    const response = await getParts({
+      pageNum: 1,
+      pageSize: 9999,
+      unassigned: true,
+      typeId: partDetail.typeId // 只获取相同类型的配件
+    })
+    // 过滤掉已关联到车辆的配件
+    unassignedParts.value = (response.records || []).filter(part => !part.vehicleId)
+  } catch (error) {
+    console.error('加载未分配配件失败:', error)
+    ElMessage.error('加载未分配配件失败')
+  }
+}
 const formData = reactive({
   id: null,
   partCode: '',
@@ -468,15 +652,167 @@ const handleEditPart = () => {
   })
 }
 
+// 显示操作历史对话框
+const showHistoryDialog = async () => {
+  if (!partDetail.value?.id) {
+    ElMessage.warning('请先选择配件')
+    return
+  }
+  
+  showHistoryDialog.value = true
+  historyLoading.value = true
+  
+  try {
+    const response = await getPartHistory(partDetail.value.id)
+    operationHistory.value = response.data || []
+  } catch (error) {
+    console.error('获取操作历史失败:', error)
+    ElMessage.error('获取操作历史失败')
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+// 显示关联配件对话框
+const showAssociateDialog = async () => {
+  showAssociateForm.value = true
+  try {
+    // 获取车辆列表
+    const response = await getVehicles()
+    vehicles.value = response.records || []
+  } catch (error) {
+    console.error('加载车辆列表失败:', error)
+    ElMessage.error('加载车辆列表失败')
+  }
+}
+ 
+// 提交关联配件
+const submitAssociate = async () => {
+  if (!associateFormData.vehicleId) {
+    ElMessage.warning('请选择车辆')
+    return
+  }
+
+  try {
+    submitting.value = true
+    await associatePart({
+      partId: partDetail.value.id,
+      vehicleId: associateFormData.vehicleId,
+      parentId: associateFormData.parentId || null
+    })
+    
+    ElMessage.success('关联配件成功')
+    showAssociateForm.value = false
+    await refreshTree()
+    
+    // 重置表单数据
+    associateFormData.vehicleId = ''
+    associateFormData.parentId = null
+  } catch (error) {
+    console.error('关联配件失败:', error)
+    ElMessage.error(error.response?.data?.message || '关联配件失败')
+  } finally {
+    submitting.value = false
+  }
+}
+
+// 处理解绑配件
+const handleDisassociatePart = async () => {
+  try {
+    await ElMessageBox.confirm('确定要解绑此配件吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    submitting.value = true
+    await disassociatePart(partDetail.value.id)
+    
+    ElMessage.success('解绑配件成功')
+    await refreshTree()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('解绑配件失败:', error)
+      ElMessage.error(error.response?.data?.message || '解绑配件失败')
+    }
+  } finally {
+    submitting.value = false
+  }
+}
+
+// 处理报废配件
+const handleScrapPart = async () => {
+  try {
+    const { value: remark } = await ElMessageBox.prompt('请输入报废原因', '报废配件', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+      inputPlaceholder: '请输入报废原因（选填）'
+    })
+    
+    submitting.value = true
+    await scrapPart(partDetail.value.id, remark)
+    
+    ElMessage.success('报废配件成功')
+    await refreshTree()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('报废配件失败:', error)
+      ElMessage.error(error.response?.data?.message || '报废配件失败')
+    }
+  } finally {
+    submitting.value = false
+  }
+}
+
 // 显示更换配件对话框
-const showReplaceDialog = () => {
-  showReplaceForm.value = true
+// 监听更换方式变化
+watch(() => replaceFormData.replaceType, (newType) => {
+  if (newType === 'existing') {
+    // 切换到关联已有配件时，清空新配件相关字段
+    Object.assign(replaceFormData, {
+      partCode: '',
+      assetNo: '',
+      serialNo: '',
+      rfidCode: '',
+      unit: '',
+      specification: '',
+      brand: '',
+      productionDate: '',
+      warrantyExpiryDate: '',
+      status: '1'
+    })
+  } else {
+    // 切换到新增配件时，清空已有配件ID
+    replaceFormData.existingPartId = ''
+  }
+})
+
+// 显示更换配件对话框
+const showReplaceDialog = async () => {
+  // 检查当前配件是否有下级配件
+  if (selectedNode.value.children && selectedNode.value.children.length > 0) {
+    ElMessage.warning('当前配件存在下级配件，请先移除下级配件后再更换')
+    return
+  }
+
+  // 保存当前配件信息
+  Object.assign(partDetail, {
+    id: selectedNode.value.partId,
+    typeId: selectedNode.value.typeId,
+    partCode: selectedNode.value.label,
+    parentId: selectedNode.value.parentId
+  })
+
+  // 重置表单数据
   Object.assign(replaceFormData, {
+    replaceType: 'new',
+    existingPartId: '',
     partCode: '',
     assetNo: '',
     serialNo: '',
     rfidCode: '',
-    typeId: '',
+    typeId: partDetail.typeId, // 使用当前配件的类型
     unit: '',
     specification: '',
     brand: '',
@@ -484,6 +820,16 @@ const showReplaceDialog = () => {
     warrantyExpiryDate: '',
     status: '1'
   })
+
+  // 加载未分配的配件
+  try {
+    await loadUnassignedParts()
+  } catch (error) {
+    console.error('加载未分配配件失败:', error)
+    ElMessage.error('加载未分配配件失败')
+  }
+
+  showReplaceForm.value = true
 }
 
 // 提交更换配件
@@ -494,22 +840,54 @@ const submitReplace = async () => {
     await replaceFormRef.value.validate()
     submitting.value = true
     
-    // 准备新配件数据
-    const newPart = {
-      ...replaceFormData,
-      vehicleId: partDetail.value.vehicleId,
-      parentId: partDetail.value.parentId
+    // 获取根节点车辆ID
+    const rootVehicleId = getRootVehicleId(selectedNode.value)
+    if (!rootVehicleId) {
+      ElMessage.error('无法确定所属车辆')
+      return
     }
-    
-    const response = await replacePart({
-      oldPartId: partDetail.value.id,
-      newPart: newPart
-    })
+
+    let response
+    if (replaceFormData.replaceType === 'existing') {
+      // 关联已有配件
+      if (!replaceFormData.existingPartId) {
+        ElMessage.warning('请选择要关联的配件')
+        return
+      }
+      
+      // 获取旧配件的parentId
+      const parentId = partDetail.parentId || null
+      console.log('parentId:', parentId)
+      
+      response = await replacePart({
+        oldPartId: partDetail.id,
+        newPartId: replaceFormData.existingPartId,
+        vehicleId: rootVehicleId,
+        parentId: parentId  // 继承旧配件的parentId
+      })
+    } else {
+      // 新增配件
+      // 获取旧配件的parentId
+      const parentId = partDetail.parentId || null
+      console.log('parentId:', parentId)
+      
+      const newPart = {
+        ...replaceFormData,
+        typeId: partDetail.typeId, // 使用原配件的类型
+        vehicleId: rootVehicleId,
+        parentId: parentId  // 继承旧配件的parentId
+      }
+      console.log('新配件数据:', newPart)
+      
+      response = await replacePart({
+        oldPartId: partDetail.id,
+        newPart: newPart
+      })
+    }
     
     ElMessage.success('更换配件成功')
     showReplaceForm.value = false
-    await loadPartDetail(partDetail.value.id)
-    await loadPartTree()
+    await refreshTree()
   } catch (error) {
     console.error('更换配件失败:', error)
     ElMessage.error(error.response?.data?.message || '更换配件失败')
@@ -523,37 +901,30 @@ const partTypes = ref([])
 
 // 表单验证规则
 const rules = {
-  partCode: [
-    { required: true, message: '请输入配件编号', trigger: 'blur' }
-  ],
-  assetNo: [
-    { max: 50, message: '资产编号不能超过50个字符', trigger: 'blur' }
-  ],
-  serialNo: [
-    { max: 50, message: '序列号不能超过50个字符', trigger: 'blur' }
-  ],
-  rfidCode: [
-    { max: 50, message: '电子标签码不能超过50个字符', trigger: 'blur' }
-  ],
-  typeId: [
-    { required: true, message: '请选择配件类型', trigger: 'change' }
-  ],
-  unit: [
-    { max: 20, message: '单位不能超过20个字符', trigger: 'blur' }
-  ],
-  specification: [
-    { max: 100, message: '规格型号不能超过100个字符', trigger: 'blur' }
-  ],
-  brand: [
-    { max: 50, message: '品牌不能超过50个字符', trigger: 'blur' }
-  ],
-//   productionDate: [
-//     { required: true, message: '请选择领用日期', trigger: 'change' }
-//   ],
-  warrantyExpiryDate: [],
-  status: [
-    { required: true, message: '请选择状态', trigger: 'change' }
-  ]
+  replaceType: [{ required: true, message: '请选择更换方式', trigger: 'change' }],
+  existingPartId: [{ 
+    required: true, 
+    message: '请选择要关联的配件', 
+    trigger: 'change',
+    validator: (rule, value, callback) => {
+      if (replaceFormData.replaceType === 'existing' && !value) {
+        callback(new Error('请选择要关联的配件'))
+      } else {
+        callback()
+      }
+    }
+  }],
+  typeId: [{ required: true, message: '请选择配件类型', trigger: 'change' }],
+  partCode: [{ required: true, message: '请输入配件编号', trigger: 'blur' }],
+  assetNo: [{ required: false, message: '请输入资产编号', trigger: 'blur' }],
+  serialNo: [{ required: false, message: '请输入序列号', trigger: 'blur' }],
+  rfidCode: [{ required: false, message: '请输入电子标签码', trigger: 'blur' }],
+  unit: [{ required: false, message: '请输入单位', trigger: 'blur' }],
+  specification: [{ required: false, message: '请输入规格型号', trigger: 'blur' }],
+  brand: [{ required: false, message: '请输入品牌', trigger: 'blur' }],
+  productionDate: [{ required: false, message: '请选择领用日期', trigger: 'change' }],
+  warrantyExpiryDate: [{ required: false, message: '请选择质保日期', trigger: 'change' }],
+  status: [{ required: false, message: '请选择状态', trigger: 'change' }]
 }
 
 // 处理节点点击
@@ -580,6 +951,7 @@ const handleNodeClick = async (data, node) => {
       // 获取配件详情
       const response = await getPartByCode(data.label)
       partDetail.value = response
+
     //   if (response.data.code === 200) {
     //     partDetail.value = response.data.data
     //   } else {
@@ -598,6 +970,39 @@ const handleNodeClick = async (data, node) => {
 const getPartTypeName = (typeId) => {
   const type = partTypes.value.find(t => t.id === typeId)
   return type ? type.typeName : '未知类型'
+}
+
+// 获取操作历史类型文本
+const getHistoryTypeText = (type) => {
+  const typeMap = {
+    'RECEIVE': '领用',
+    'REPAIR': '维修',
+    'SCRAP': '报废',
+    'REPLACE': '更换',
+    'ASSOCIATE': '关联',
+    'DISASSOCIATE': '解绑'
+  }
+  return typeMap[type] || type
+}
+
+// 获取操作历史标签样式
+const getHistoryTagType = (type) => {
+  const typeMap = {
+    'RECEIVE': 'success',
+    'REPAIR': 'warning',
+    'SCRAP': 'danger',
+    'REPLACE': 'primary',
+    'ASSOCIATE': 'info',
+    'DISASSOCIATE': 'danger'
+  }
+  return typeMap[type] || ''
+}
+
+// 格式化日期时间
+const formatDateTime = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
 // 获取配件状态文本
@@ -630,7 +1035,7 @@ const refreshTree = async () => {
   loading.value = true
   try {
     await initData()
-    ElMessage.success('数据刷新成功')
+    // ElMessage.success('数据刷新成功')
   } catch (error) {
     ElMessage.error('数据刷新失败')
   } finally {
@@ -648,13 +1053,18 @@ const initData = async () => {
     const vehicles = vehicleRes.records
 
     // 获取配件类型列表
-    const typeRes = await getPartTypes()
+    const typeRes = await getPartTypes({
+      
+    })
     console.log('配件类型数据:', typeRes)
     partTypes.value = typeRes.records
 
     // 获取配件列表
-    const partsRes = await getParts()
-    console
+    const partsRes = await getParts({
+      pageNum: 1,
+      pageSize: 9999
+    })
+    
     const parts = partsRes.records
 
     // 构建树形数据
@@ -729,14 +1139,16 @@ const handleAddPart = () => {
 
   const { data } = currentNode.value
   
-  // 根据节点类型设置vehicleId和parentId
-  if (data.type === 'vehicle') {
-    formData.vehicleId = data.vehicleId
-    formData.parentId = null
-  } else if (data.type === 'part') {
-    formData.vehicleId = data.vehicleId
-    formData.parentId = data.partId
+  // 获取根节点车辆ID
+  const rootVehicleId = getRootVehicleId(data)
+  if (!rootVehicleId) {
+    ElMessage.error('无法确定所属车辆')
+    return
   }
+  
+  // 设置vehicleId为根节点车辆ID，parentId根据当前节点类型设置
+  formData.vehicleId = rootVehicleId
+  formData.parentId = data.type === 'part' ? data.partId : null
 
   showAddForm.value = true
   hideContextMenu()

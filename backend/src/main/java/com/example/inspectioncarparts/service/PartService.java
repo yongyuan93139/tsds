@@ -1,5 +1,6 @@
 package com.example.inspectioncarparts.service;
 
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.example.inspectioncarparts.domain.dto.ReplacePartRequest;
 import com.example.inspectioncarparts.domain.entity.Part;
 import com.example.inspectioncarparts.common.Page;
@@ -54,7 +55,7 @@ public interface PartService {
      * @param vehicleId 车辆ID
      * @return 更新后的配件信息
      */
-    Part associateWithVehicle(Integer partId, Integer vehicleId);
+    Part associateWithVehicle(Integer partId, Integer vehicleId, Integer parentId);
 
     /**
      * 解除配件与车辆的关联
@@ -109,4 +110,30 @@ public interface PartService {
      */
     Part replacePart(Integer oldPartId, Part newPart);
 
+    /**
+     * 配件领用
+     * @param partId 配件ID
+     * @param operator 操作人
+     * @return 更新后的配件信息
+     */
+    Part receivePart(Integer partId, String operator);
+
+    /**
+     * 配件维修
+     * @param partId 配件ID
+     * @param operator 操作人
+     * @param remark 维修备注
+     * @return 更新后的配件信息
+     */
+    Part repairPart(Integer partId, String operator, String remark);
+
+    /**
+     * 配件报废
+     * @param partId 配件ID
+     * @param remark 报废原因
+     * @return 更新后的配件信息
+     */
+    Part scrapPart(Integer partId,  String remark);
+
+    Part replacePart(ReplacePartRequest request);
 }
