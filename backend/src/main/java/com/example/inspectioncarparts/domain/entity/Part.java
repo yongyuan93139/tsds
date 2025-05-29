@@ -95,4 +95,8 @@ public class Part {
     @ApiModelProperty("配件状态: 0-禁用, 1-可用, 2-维修中, 3-报废")
     @TableField("status")
     private Integer status;
+
+    @ApiModelProperty("负责人")
+    @TableField("manager")
+    private String manager;
 }

@@ -151,6 +151,10 @@
                       <span class="label">状态:</span>
                       <span class="value">{{ getPartStatusText(partDetail.value.status) }}</span>
                     </div>
+                    <div class="info-item">
+                      <span class="label">创建时间:</span>
+                      <span class="value">{{ partDetail.value.create_time ? formatDateTimeToHMS(partDetail.value.create_time) : '未激活' }}</span>
+                    </div>
                   </div>
                   <div class="info-column">
                     <div class="info-item">
@@ -176,6 +180,10 @@
                     <div class="info-item">
                       <span class="label">使用日期:</span>
                       <span class="value">{{ partDetail.value.activationDate ? formatDate(partDetail.value.activationDate) : '未激活' }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="label">创建人:</span>
+                      <span class="value">{{ partDetail.value.creator || '无' }}</span>
                     </div>
                   </div>
                 </div>
@@ -468,7 +476,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive, watch } from 'vue'
+import { ref, onMounted, reactive, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getParts, createPart, getPartByCode, updatePart, replacePart, disassociatePart, scrapPart, associatePart, getPartHistory } from '@/api/part'
 import { getPartTypes } from '@/api/partType'
@@ -529,7 +537,10 @@ const partDetail = reactive({
   warrantyExpiryDate: '',
   status: '',
   activationDate: null,
-  vehicleId: null
+  vehicleId: null,
+  createTime: null,
+  creator: '',
+  manager: ''
 })
 
 // 表单相关
@@ -639,7 +650,9 @@ const handleEditPart = () => {
     status: partDetail.value.status || '1',
     activationDate: partDetail.value.activationDate || null,
     vehicleId: partDetail.value.vehicleId,
-    parentId: partDetail.value.parentId
+    parentId: partDetail.value.parentId,
+    manager: partDetail.value.manager || ''
+
   })
 }
 
@@ -1034,11 +1047,31 @@ const formatDate = (dateString) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+//格式化日期到时分秒
+const formatDateTimeToHMS = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`
+}
+
 // 从选中节点添加配件
-const handleAddPartToSelected = () => {
+const handleAddPartToSelected = async () => {
   if (!selectedNode.value) return
+  
+  // 重置编辑模式
+  isEditMode.value = false
+  
+  // 等待状态更新
+  await nextTick()
+  
+  // 设置当前节点
   currentNode.value = { data: selectedNode.value }
-  handleAddPart()
+  
+  // 等待节点设置完成
+  await nextTick()
+  
+  // 调用添加配件处理函数
+  await handleAddPart()
 }
 
 // 刷新树形数据
@@ -1145,7 +1178,7 @@ const hideContextMenu = () => {
 }
 
 // 处理添加配件
-const handleAddPart = () => {
+const handleAddPart = async () => {
   if (!currentNode.value) return
 
   const { data } = currentNode.value
@@ -1157,12 +1190,38 @@ const handleAddPart = () => {
     return
   }
   
-  // 设置vehicleId为根节点车辆ID，parentId根据当前节点类型设置
-  formData.vehicleId = rootVehicleId
-  formData.parentId = data.type === 'part' ? data.partId : null
-
-  showAddForm.value = true
+  // 先隐藏右键菜单
   hideContextMenu()
+  
+  // 等待DOM更新
+  await nextTick()
+  
+  // 重置表单数据
+  Object.assign(formData, {
+    id: null,
+    partCode: '',
+    assetNo: '',
+    serialNo: '',
+    rfidCode: '',
+    typeId: '',
+    unit: '',
+    specification: '',
+    brand: '',
+    productionDate: '',
+    warrantyExpiryDate: '',
+    status: '1',
+    vehicleId: rootVehicleId,
+    parentId: data.type === 'part' ? data.partId : null
+  })
+
+  // 确保设置为添加模式
+  isEditMode.value = false
+  
+  // 等待数据更新
+  await nextTick()
+  
+  // 显示表单
+  showAddForm.value = true
 }
 
 // 提交表单
@@ -1182,13 +1241,16 @@ const submitForm = async () => {
       response = await updatePart(formData)
       console.log('更新配件响应:', response)
       
-      // 更新树节点
-      updateTreeNode(response)
+      // 先重置表单和状态
+      showAddForm.value = false
+      isEditMode.value = false
+      resetForm()
       
-      // 更新详情数据
-      if (selectedNode.value && selectedNode.value.partId === formData.id) {
-        partDetail.value = response
-      }
+      // 等待DOM更新
+      await nextTick()
+      
+      // 刷新整个树
+      await refreshTree()
       
       ElMessage.success('更新配件成功')
     } else {
@@ -1196,17 +1258,19 @@ const submitForm = async () => {
       response = await createPart(formData)
       console.log('创建配件响应:', response)
       
-      // 更新树形结构
-      updateTreeWithNewPart(response)
+      // 先重置表单和状态
+      showAddForm.value = false
+      isEditMode.value = false
+      resetForm()
+      
+      // 等待DOM更新
+      await nextTick()
+      
+      // 刷新整个树
+      await refreshTree()
       
       ElMessage.success('添加配件成功')
     }
-    
-    // 重置表单和状态
-    showAddForm.value = false
-    isEditMode.value = false
-    resetForm()
-    
   } catch (error) {
     ElMessage.error(isEditMode.value ? '更新配件失败' : '添加配件失败')
     console.error(error)
@@ -1241,63 +1305,31 @@ const updateTreeNode = (updatedPart) => {
 
 // 更新树形结构，添加新配件
 const updateTreeWithNewPart = async (newPart) => {
-  // 获取配件类型信息
-  const partType = partTypes.value.find(type => type.id === newPart.typeId)
+  // 直接刷新整个树
+  await refreshTree()
   
-  // 创建新的树节点
-  const newNode = {
-    id: `part_${newPart.id}`,
-    label: newPart.partCode,
-    typeName: partType?.typeName,
-    partId: newPart.id,
-    typeId: newPart.typeId,
-    vehicleId: newPart.vehicleId,
-    type: 'part',
-    children: []
-  }
+  // 等待DOM更新
+  await nextTick()
   
-  // 找到父节点并添加新节点
-  if (newPart.parentId) {
-    // 如果有父配件，找到父配件节点
-    const findAndAddToParent = (nodes) => {
-      for (const node of nodes) {
-        if (node.type === 'part' && node.partId === newPart.parentId) {
-          node.children.push(newNode)
-          return true
-        }
-        if (node.children && node.children.length > 0) {
-          if (findAndAddToParent(node.children)) {
-            return true
-          }
-        }
-      }
-      return false
-    }
-    
-    findAndAddToParent(treeData.value)
-  } else {
-    // 如果直接挂在车辆下，找到对应的车辆节点
-    const vehicleNode = treeData.value.find(node => 
-      node.type === 'vehicle' && node.vehicleId === newPart.vehicleId
-    )
-    
-    if (vehicleNode) {
-      vehicleNode.children.push(newNode)
-    }
-  }
-  
-  // 更新选中节点
-  selectedNode.value = newNode
-  
-  // 如果有树引用，展开父节点
+  // 如果需要，展开到新添加的节点
   if (treeRef.value) {
+    // 找到新节点的路径
+    const path = []
     if (newPart.parentId) {
-      const parentKey = `part_${newPart.parentId}`
-      treeRef.value.store.nodesMap[parentKey].expanded = true
+      path.push(`part_${newPart.parentId}`)
     } else {
-      const vehicleKey = `vehicle_${newPart.vehicleId}`
-      treeRef.value.store.nodesMap[vehicleKey].expanded = true
+      path.push(`vehicle_${newPart.vehicleId}`)
     }
+    path.push(`part_${newPart.id}`)
+    
+    // 展开路径上的所有节点
+    path.forEach(key => {
+      try {
+        treeRef.value.setExpandedKeys([key])
+      } catch (error) {
+        console.warn('展开节点失败:', error)
+      }
+    })
   }
 }
 
@@ -1307,6 +1339,7 @@ const resetForm = () => {
     formRef.value.resetFields()
   }
   showAddForm.value = false
+  isEditMode.value = false // 确保重置编辑模式
 }
 
 // 页面加载时初始化数据
