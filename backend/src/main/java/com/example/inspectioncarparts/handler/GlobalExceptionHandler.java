@@ -22,6 +22,14 @@ public class GlobalExceptionHandler {
         return Result.fail("系统异常，请稍后再试");
     }
 
+    @ExceptionHandler(Throwable.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Result<String> handleThrowable(Throwable e, HttpServletRequest request) {
+        logger.error("Request URL: {}, Exception: ", request.getRequestURL(), e);
+        return Result.fail("系统异常，请稍后再试");
+    }
+
+
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<String> handleRuntimeException(RuntimeException e) {

@@ -13,21 +13,28 @@
       </div>
       
       <div v-else>
-        <el-descriptions :column="1" border>
-          <el-descriptions-item label="配件编码">{{ part.partCode }}</el-descriptions-item>
-          <el-descriptions-item label="配件类型">
-            <template #default="scope">
-              {{ getTypeName(part.typeId) }}
-            </template>
-          </el-descriptions-item>
-          <el-descriptions-item label="领用日期"  >  {{ formatDate(part.productionDate) }}</el-descriptions-item>
-         
-          <el-descriptions-item label="状态">
-            <el-tag :type="getStatusType(part.status)">
-              {{ getStatusText(part.status) }}
-            </el-tag>
-          </el-descriptions-item>
-        </el-descriptions>
+        <el-tabs type="border-card">
+          <el-tab-pane label="基本信息">
+            <el-descriptions :column="1" border>
+              <el-descriptions-item label="配件编码">{{ part.partCode }}</el-descriptions-item>
+              <el-descriptions-item label="配件类型">
+                <template #default="scope">
+                  {{ getTypeName(part.typeId) }}
+                </template>
+              </el-descriptions-item>
+              <el-descriptions-item label="领用日期">{{ formatDate(part.productionDate) }}</el-descriptions-item>
+              <el-descriptions-item label="状态">
+                <el-tag :type="getStatusType(part.status)">
+                  {{ getStatusText(part.status) }}
+                </el-tag>
+              </el-descriptions-item>
+            </el-descriptions>
+          </el-tab-pane>
+          
+          <el-tab-pane label="维修记录">
+            <part-repair-list :part-id="part.id" />
+          </el-tab-pane>
+        </el-tabs>
       </div>
     </el-card>
   </div>
@@ -39,6 +46,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getPartByCode } from '@/api/part'
 import { getPartTypes } from '@/api/partType'
+import PartRepairList from '@/components/repair/PartRepairList.vue'
 
 
 const route = useRoute()

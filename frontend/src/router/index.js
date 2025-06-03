@@ -73,6 +73,29 @@ const routes = [
     path: '/',
     component: () => import('@/layout/index.vue'),
     meta: { 
+      title: '维修管理', 
+      icon: 'Tools', 
+      requiresAuth: true,
+      permission: 'repair' 
+    },
+    children: [
+      {
+        path: 'repairs',
+        name: 'repairMgr',
+        component: () => import('@/views/repair/repair.vue'),
+        meta: { 
+          title: '维修工单管理',
+          permission: ['repairMgr', 'repair'],
+          icon: 'Document'
+        },
+        alias: ['/repairs/repairs']
+      }
+    ]
+  },
+  {
+    path: '/',
+    component: () => import('@/layout/index.vue'),
+    meta: { 
       title: '车辆配置', 
       icon: 'Setting', 
       requiresAuth: true,
